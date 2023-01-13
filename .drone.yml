@@ -1,0 +1,42 @@
+kind: pipeline
+type: docker
+name: test
+
+steps:
+- name: test
+  image: rust
+  commands:
+  - cargo clippy --all
+  - cargo test --all
+
+---
+kind: pipeline
+type: docker
+name: "doc"
+
+
+steps:
+- name: "doc"
+  image: rust
+  commands:
+  - cargo doc --all --no-deps --document-private-item
+
+
+---
+kind: pipeline
+type: docker
+name: "fmt check"
+
+
+steps:
+- name: "fmt check"
+  image: rust
+  commands:
+  - rustup install nightly
+  - rustup +nightly component add rustfmt
+  - cargo +nightly fmt --all --check
+
+---
+kind: pipeline
+type: docker
+name: "coverage"

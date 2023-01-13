@@ -1,0 +1,26 @@
+version: 2
+updates:
+
+# main crate
+- package-ecosystem: cargo
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  target-branch: develop
+
+# procedural macro
+- package-ecosystem: cargo
+  directory: "/derive/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  target-branch: develop
+
+# procedural macro
+- package-ecosystem: cargo
+  directory: "/macro-utils/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  target-branch: develop

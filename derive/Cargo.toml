@@ -1,0 +1,20 @@
+[package]
+name = "utils-lib-derive"
+version = "0.1.0"
+authors = ["Aliénore Bouttefeux <alienore.bouttefeux@gmail.com>"]
+edition = "2021"
+description = "Set of procedural macro for the main library"
+repository = "https://git.noxie.ch/ABouttefeux/utils-lib"
+license = "MIT OR Apache-2.0"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0"
+syn = "2.0"
+proc-macro2 = "1.0"
+macro-utils = { path = "../macro-utils" }
+
+[dev-dependencies]
+version-sync = "0.9.4"
