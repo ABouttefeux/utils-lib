@@ -141,8 +141,7 @@ use quote::quote;
 
 /// Find the name of the type of the derive macro
 fn find_name(iter: &mut IntoIter) -> Ident {
-    let Some(TokenTree2::Ident(i)) = iter
-    .find(|el| {
+    let Some(TokenTree2::Ident(i)) = iter.find(|el| {
         if let TokenTree2::Ident(ident) = el {
             let s = ident.to_string();
             s != "pub"
@@ -155,7 +154,9 @@ fn find_name(iter: &mut IntoIter) -> Ident {
         } else {
             false
         }
-    }) else {panic!("no name found")};
+    }) else {
+        panic!("no name found")
+    };
 
     Ident::new(i.to_string().as_str(), Span::call_site())
 }
@@ -168,9 +169,11 @@ pub fn derive_getter(item: TokenStream) -> TokenStream {
     let mut iter = item.into_iter();
     let name = find_name(&mut iter);
 
-    let Some(TokenTree2::Group(group)) = iter.find(|el|{
-        matches!(el, TokenTree2::Group(gp) if gp.delimiter() == Delimiter::Bracket)
-    }) else {panic!("no groupe found")};
+    let Some(TokenTree2::Group(group)) =
+        iter.find(|el| matches!(el, TokenTree2::Group(gp) if gp.delimiter() == Delimiter::Bracket))
+    else {
+        panic!("no groupe found")
+    };
 
     let stream = group.stream();
 
@@ -185,7 +188,9 @@ pub fn derive_getter(item: TokenStream) -> TokenStream {
     const MESSAGE_MISFORMED: &str = "misformed structure, no first element";
 
     for array in vector {
-        let Some(element) = array.first() else {panic!("{}", MESSAGE_MISFORMED)};
+        let Some(element) = array.first() else {
+            panic!("{}", MESSAGE_MISFORMED)
+        };
 
         let function_add_code = |_config: (), _ident: &Ident, _ty: &Ident| todo!();
 

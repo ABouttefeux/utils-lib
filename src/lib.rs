@@ -121,11 +121,19 @@
 
 //
 //---------------
-#![warn(missing_docs)] // doc
-#![warn(clippy::missing_docs_in_private_items)] // doc
+//#![warn(missing_docs)] // doc
+//#![warn(clippy::missing_docs_in_private_items)] // doc
 
 //--
 //#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize)]
 
+#[macro_use]
+mod macro_def;
+pub mod coordinate;
+pub mod number;
+
 #[cfg(test)]
 mod test;
+
+pub use self::coordinate::{abs_diff, Axis, Coordinate};
+pub use self::number::{PositiveFloat, ValidationGuard, ZeroOneBoundedFloat};

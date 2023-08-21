@@ -6,6 +6,7 @@ edition = "2021"
 description = "Set of procedural macro for the main library"
 repository = "https://git.noxie.ch/ABouttefeux/utils-lib"
 license = "MIT OR Apache-2.0"
+publish = false
 
 [lib]
 proc-macro = true
