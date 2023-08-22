@@ -11,7 +11,7 @@ impl_op_trait!(PositiveFloat, float_mut, Add);
 impl_op_trait!(PositiveFloat, float_mut, Mul);
 impl_op_trait!(PositiveFloat, float_mut, Div);
 
-impl_op_trait!(ZeroOneBoundedFloat, float_mut, MulAssign, mul_assign, *=, Mul, mul, *);
+impl_op_trait!(ZeroOneBoundedFloat, float_mut, Mul);
 
 // TODO macro and ref trait
 

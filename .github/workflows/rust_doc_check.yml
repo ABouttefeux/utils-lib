@@ -24,4 +24,4 @@ jobs:
         toolchain: stable
     
     - name: Doc
-      run: cargo doc --all --no-deps --document-private-item
+      run: cargo doc --all --no-deps --document-private-items

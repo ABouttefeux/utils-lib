@@ -6,22 +6,14 @@ use std::{
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[inline]
-pub fn abs_diff<T>(n1: T, n2: T) -> T::Output
-where
-    T: PartialOrd + Sub<T>,
-{
-    if n1 > n2 {
-        n1 - n2
-    } else {
-        n2 - n1
-    }
-}
+use crate::number::abs_diff;
+
+// TODO conversion for Axis2D
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[allow(clippy::exhaustive_enums)]
-pub enum Axis {
+#[allow(clippy::exhaustive_enums)] // reason = "no more variant possible"
+pub enum Axis2D {
     /// X
     #[default]
     Vertical,
@@ -29,7 +21,7 @@ pub enum Axis {
     Horizontal,
 }
 
-impl Axis {
+impl Axis2D {
     pub const AXIS: [Self; 2] = [Self::Vertical, Self::Horizontal];
 
     #[inline]
@@ -53,6 +45,15 @@ impl Axis {
 
     #[inline]
     #[must_use]
+    pub const fn as_index(self) -> &'static usize {
+        match self {
+            Self::Vertical => &0,
+            Self::Horizontal => &1,
+        }
+    }
+
+    #[inline]
+    #[must_use]
     pub const fn perpendicular(self) -> Self {
         match self {
             Self::Vertical => Self::Horizontal,
@@ -70,7 +71,7 @@ impl Axis {
     }
 }
 
-impl Not for Axis {
+impl Not for Axis2D {
     type Output = Self;
 
     #[inline]
@@ -78,6 +79,8 @@ impl Not for Axis {
         self.perpendicular()
     }
 }
+
+// TODO conversion Coord
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -119,19 +122,19 @@ impl<T> Coordinate<T> {
 
     #[inline]
     #[must_use]
-    pub const fn get(&self, axis: Axis) -> &T {
+    pub const fn get(&self, axis: Axis2D) -> &T {
         match axis {
-            Axis::Vertical => self.x(),
-            Axis::Horizontal => self.y(),
+            Axis2D::Vertical => self.x(),
+            Axis2D::Horizontal => self.y(),
         }
     }
 
     #[inline]
     #[must_use]
-    pub fn get_mut(&mut self, axis: Axis) -> &mut T {
+    pub fn get_mut(&mut self, axis: Axis2D) -> &mut T {
         match axis {
-            Axis::Vertical => self.x_mut(),
-            Axis::Horizontal => self.y_mut(),
+            Axis2D::Vertical => self.x_mut(),
+            Axis2D::Horizontal => self.y_mut(),
         }
     }
 
@@ -149,7 +152,25 @@ impl<T> Coordinate<T> {
     #[inline]
     #[must_use]
     pub const fn as_tuple(&self) -> (&T, &T) {
-        (&self.x, &self.y)
+        (self.x(), self.y())
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn as_tuple_mut(&mut self) -> (&mut T, &mut T) {
+        (&mut self.x, &mut self.y)
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn as_array(&self) -> [&T; 2] {
+        [self.x(), self.y()]
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn as_array_mut(&mut self) -> [&mut T; 2] {
+        [&mut self.x, &mut self.y]
     }
 
     #[inline]
@@ -165,16 +186,31 @@ impl<T> Coordinate<T> {
     }
 }
 
-impl<T: Copy> Coordinate<T> {
+impl<T> Coordinate<T> {
     #[inline]
     #[must_use]
-    pub const fn into_tuple(self) -> (T, T) {
+    pub fn into_tuple(self) -> (T, T) {
         (self.x, self.y)
     }
 
     #[inline]
     #[must_use]
-    pub const fn into_array(self) -> [T; 2] {
+    pub fn into_array(self) -> [T; 2] {
+        [self.x, self.y]
+    }
+}
+
+// ~const Drop
+impl<T: Copy> Coordinate<T> {
+    #[inline]
+    #[must_use]
+    pub const fn into_tuple_const(self) -> (T, T) {
+        (self.x, self.y)
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn into_array_const(self) -> [T; 2] {
         [self.x, self.y]
     }
 }
@@ -189,7 +225,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use early_fighter::coordinate::Coordinate;
+    /// use utils_lib::coordinate::Coordinate;
     ///
     /// let coord_zero = Coordinate::new(0_i32, 0_i32);
     /// assert_eq!(coord_zero.s1_distance(&coord_zero), 0_i32);
