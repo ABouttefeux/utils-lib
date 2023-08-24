@@ -3,15 +3,17 @@
 //! more precisely [`std::ops::Add`], [`std::ops::AddAssign`], [`std::ops::Div`],
 //! [`std::ops::DivAssign`], [`std::ops::Mul`] and [`std::ops::MulAssign`].
 
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign};
 
 use super::{PositiveFloat, ZeroOneBoundedFloat};
 
 impl_op_trait!(PositiveFloat, float_mut, Add);
 impl_op_trait!(PositiveFloat, float_mut, Mul);
 impl_op_trait!(PositiveFloat, float_mut, Div);
+impl_op_trait!(PositiveFloat, float_mut, Rem);
 
 impl_op_trait!(ZeroOneBoundedFloat, float_mut, Mul);
+impl_op_trait!(ZeroOneBoundedFloat, float_mut, Rem);
 
 // TODO macro and ref trait
 

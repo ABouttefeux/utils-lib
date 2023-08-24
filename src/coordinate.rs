@@ -14,10 +14,10 @@ use crate::number::abs_diff;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[allow(clippy::exhaustive_enums)] // reason = "no more variant possible"
 pub enum Axis2D {
-    /// X
+    /// X axis
     #[default]
     Vertical,
-    /// Y
+    /// Y Axis
     Horizontal,
 }
 

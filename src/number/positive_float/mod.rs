@@ -2,6 +2,8 @@
 //!
 //! The module exits in order to compartmentalize code.
 
+mod num_traits_impl;
+
 use std::{
     cmp::Ordering,
     fmt::{self, Display, LowerExp, UpperExp},
@@ -10,7 +12,6 @@ use std::{
     ops::Deref,
 };
 
-use num_traits::{One, Zero};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -75,11 +76,38 @@ impl Deref for PositiveFloat {
     }
 }
 
+/// represent in which range a  [`f64`] can be respectively to the bounds of [`PositiveFloat`]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+enum BoundRange {
+    /// [`f64::INFINITY`]
+    UpperBound,
+    /// between 0 and [`f64::MAX`]
+    #[default]
+    InRange,
+    /// Strictly below 0
+    LowerRange,
+}
+
 impl PositiveFloat {
     /// Value 0
     pub const ZERO: Self = Self(0_f64);
+
     /// Value 1
     pub const ONE: Self = Self(1_f64);
+
+    /// Maximum value
+    pub const MAX: Self = Self(f64::MAX);
+
+    /// determine under which bound the given float is
+    fn float_range(float: f64) -> BoundRange {
+        if Self::validate_data(float) {
+            BoundRange::InRange
+        } else if float == f64::INFINITY {
+            BoundRange::UpperBound
+        } else {
+            BoundRange::LowerRange
+        }
+    }
 
     /// Create a new Self from a [`f64`]. It returns [`Some`] only if the float is valid ([`Self::validate_data`]), i.e.
     /// it is >= 0 it is not [`f64::NAN`] and not [`f64::INFINITY`].
@@ -112,7 +140,7 @@ impl PositiveFloat {
     /// use utils_lib::PositiveFloat;
     /// # use utils_lib::error::NoneError;
     ///
-    /// # fn test() -> Result<(), NoneError> {
+    /// # fn main() -> Result<(), NoneError> {
     /// assert_eq!(
     ///     PositiveFloat::new_or_default(0_f64),
     ///     PositiveFloat::new(0_f64).ok_or(NoneError)?
@@ -128,7 +156,7 @@ impl PositiveFloat {
     ///
     /// assert_eq!(
     ///     PositiveFloat::new_or_default(f64::INFINITY),
-    ///     PositiveFloat::default()
+    ///     PositiveFloat::ZERO
     /// );
     /// assert_eq!(
     ///     PositiveFloat::new_or_default(-f64::INFINITY),
@@ -155,6 +183,36 @@ impl PositiveFloat {
         Self::new(float).unwrap_or_default()
     }
 
+    // Create a new Self with the float as value if it is valid ( `>= 0` finite and not [`f64::NAN`])
+    /// or return 0 or to [`f6::MAX`] if the value is infinity instead.
+    ///
+    /// Note that contrary to [`Self::new_or_default`] when given infinity it gives bac [`Self::MAX`]
+    /// ```
+    /// use utils_lib::PositiveFloat;
+    /// # use utils_lib::error::NoneError;
+    ///
+    /// # fn main() -> Result<(), NoneError> {
+    /// assert_eq!(
+    ///     PositiveFloat::new_or_default(f64::INFINITY),
+    ///     PositiveFloat::ZERO
+    /// );
+    /// assert_eq!(
+    ///     PositiveFloat::new_or_bounded(f64::INFINITY),
+    ///     PositiveFloat::MAX
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn new_or_bounded(float: f64) -> Self {
+        match Self::float_range(float) {
+            BoundRange::InRange => Self(float),
+            BoundRange::UpperBound => Self::MAX,
+            BoundRange::LowerRange => Self::ZERO,
+        }
+    }
+
     /// Get the underling float. It could also be accessed by using [`Deref`],
     /// note that [`DerefMut`] is not implemented.
     #[inline]
@@ -164,7 +222,7 @@ impl PositiveFloat {
     }
 
     /// Returns a way to mut the underlying float. If the final value is not valid,
-    /// It is set to 0. See [`NumberValidationGuard`].
+    /// It is set to 0 or to [`f6::MAX`] if the value is infinity. See [`NumberValidationGuard`].
     #[inline]
     #[must_use]
     pub fn float_mut(&'_ mut self) -> ValidationGuard<'_, Self> {
@@ -183,7 +241,7 @@ impl PositiveFloat {
     /// use utils_lib::PositiveFloat;
     /// # use utils_lib::error::NoneError;
     ///
-    /// # fn test() -> Result<(), NoneError> {
+    /// # fn main() -> Result<(), NoneError> {
     /// let p1 = PositiveFloat::new(1_f64).ok_or(NoneError)?;
     /// let p2 = PositiveFloat::new(2_f64).ok_or(NoneError)?;
     ///
@@ -209,7 +267,7 @@ impl PositiveFloat {
     /// use utils_lib::PositiveFloat;
     /// # use utils_lib::error::NoneError;
     ///
-    /// # fn test() -> Result<(), NoneError> {
+    /// # fn main() -> Result<(), NoneError> {
     /// let p1 = PositiveFloat::new(1_f64).ok_or(NoneError)?;
     /// let p2 = PositiveFloat::new(2_f64).ok_or(NoneError)?;
     ///
@@ -238,25 +296,6 @@ impl AsRef<f64> for PositiveFloat {
     }
 }
 
-impl Zero for PositiveFloat {
-    #[inline]
-    fn zero() -> Self {
-        Self::ZERO
-    }
-
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.float() == 0_f64
-    }
-}
-
-impl One for PositiveFloat {
-    #[inline]
-    fn one() -> Self {
-        Self::ONE
-    }
-}
-
 impl Validation for PositiveFloat {
     #[inline]
     fn validate_data(t: f64) -> bool {
@@ -268,11 +307,11 @@ impl Validation for PositiveFloat {
 
     #[inline]
     fn set_float(&mut self, float: f64) {
-        self.0 = if Self::validate_data(float) {
-            float
-        } else {
-            0_f64
-        };
+        self.0 = match Self::float_range(float) {
+            BoundRange::InRange => float,
+            BoundRange::UpperBound => f64::MAX,
+            BoundRange::LowerRange => 0_f64,
+        }
     }
 }
 
@@ -315,12 +354,22 @@ mod test {
         assert!(PositiveFloat::new(f64::MIN_POSITIVE).is_some());
         assert!(PositiveFloat::new(-2e-32_f64).is_none());
 
+        assert_eq!(
+            PositiveFloat::new_or_bounded(f64::INFINITY),
+            PositiveFloat::new(f64::MAX).ok_or(NoneError)?
+        );
+
+        assert_eq!(PositiveFloat::new_or_bounded(-1_f64), PositiveFloat::ZERO,);
+        assert_eq!(PositiveFloat::new_or_bounded(1_f64), PositiveFloat::ONE);
+
         let mut t = PositiveFloat::new(1_f64).ok_or(NoneError)?;
         assert_eq!(*t.float_mut(), 1_f64);
         *t.float_mut() = 2_f64;
         assert_eq!(t.float(), 2_f64);
         *t.float_mut() = f64::NAN;
         assert_eq!(t.float(), 0_f64);
+        *t.float_mut() = f64::INFINITY;
+        assert_eq!(t.float(), f64::MAX);
 
         Ok(())
     }

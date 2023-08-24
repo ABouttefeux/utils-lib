@@ -13,6 +13,9 @@ macro_rules! impl_op_trait {
     ($s:ident, $method:ident, Sub) => {
         $crate::impl_op_trait!($s,$method, SubAssign, sub_assign, -=, Sub, sub, -);
     };
+    ($s:ident, $method:ident, Rem) => {
+        $crate::impl_op_trait!($s,$method, RemAssign, rem_assign, %=, Rem, rem, %);
+    };
     ($s:ident, $method:ident, $t1:ident, $f1:ident, $op1:tt, $t2:ident, $f2:ident, $op2:tt) => {
         impl $t1 for $s {
             #[inline]

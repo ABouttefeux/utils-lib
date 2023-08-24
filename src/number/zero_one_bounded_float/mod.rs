@@ -2,6 +2,8 @@
 //!
 //! The module exits in order to compartmentalize code.
 
+mod num_traits_impl;
+
 use std::{
     cmp::Ordering,
     fmt::{self, Display, LowerExp, UpperExp},
@@ -10,7 +12,6 @@ use std::{
     ops::Deref,
 };
 
-use num_traits::{Bounded, One};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -74,11 +75,35 @@ impl Deref for ZeroOneBoundedFloat {
     }
 }
 
+/// represent in which range a  [`f64`] can be respectively to the bounds of [`ZeroOneBoundedFloat`]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+enum BoundRange {
+    /// Strictly above 1
+    UpperBound,
+    /// between 0 and 1
+    #[default]
+    InRange,
+    /// Strictly below 0
+    LowerRange,
+}
+
 impl ZeroOneBoundedFloat {
     /// Value 0
     pub const ZERO: Self = Self(0_f64);
+
     /// Value 1
     pub const ONE: Self = Self(1_f64);
+
+    /// determine under which bound the given float is
+    fn float_range(float: f64) -> BoundRange {
+        if Self::validate_data(float) {
+            BoundRange::InRange
+        } else if float.classify() != FpCategory::Nan && float >= 1_f64 {
+            BoundRange::UpperBound
+        } else {
+            BoundRange::LowerRange
+        }
+    }
 
     /// Create a new Self from a [`f64`]. It returns [`Some`] only if the float is valid ([`Self::validate_data`]), i.e.
     /// it is >= 0  and <= 1.
@@ -107,7 +132,7 @@ impl ZeroOneBoundedFloat {
         Self::validate_data(float).then_some(Self(float))
     }
 
-    /// Create a new Self with the float as value if it is valid ( `>= 0` finite and not [`f64::NAN`])
+    /// Create a new Self with the float as value if it is valid ( `>= 0` and <= 1)
     /// or return the default value (0) instead.
     ///
     /// # Example
@@ -115,7 +140,7 @@ impl ZeroOneBoundedFloat {
     /// use utils_lib::ZeroOneBoundedFloat;
     /// # use utils_lib::error::NoneError;
     ///
-    /// # fn test() -> Result<(), NoneError> {
+    /// # fn main() -> Result<(), NoneError> {
     /// assert_eq!(
     ///     ZeroOneBoundedFloat::new_or_default(0_f64),
     ///     ZeroOneBoundedFloat::new(0_f64).ok_or(NoneError)?
@@ -146,6 +171,36 @@ impl ZeroOneBoundedFloat {
         Self::new(float).unwrap_or_default()
     }
 
+    // Create a new Self with the float as value if it is valid (`>= 0` and <= 1)
+    /// or return 0 for value < 0 and 1 for value > 1
+    ///
+    /// Note that contrary to [`Self::new_or_default`] if values are > 1 it creates [`Self::ONE`]
+    /// ```
+    /// use utils_lib::ZeroOneBoundedFloat;
+    /// # use utils_lib::error::NoneError;
+    ///
+    /// # fn main() -> Result<(), NoneError> {
+    /// assert_eq!(
+    ///     ZeroOneBoundedFloat::new_or_default(1.5_f64),
+    ///     ZeroOneBoundedFloat::ZERO
+    /// );
+    /// assert_eq!(
+    ///     ZeroOneBoundedFloat::new_or_bounded(1.5_f64),
+    ///     ZeroOneBoundedFloat::ONE
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn new_or_bounded(float: f64) -> Self {
+        match Self::float_range(float) {
+            BoundRange::InRange => Self(float),
+            BoundRange::LowerRange => Self::ZERO,
+            BoundRange::UpperBound => Self::ONE,
+        }
+    }
+
     /// Get the underling float. It could also be accessed by using [`Deref`],
     /// note that [`DerefMut`] is not implemented.
     #[inline]
@@ -174,14 +229,14 @@ impl ZeroOneBoundedFloat {
     /// use utils_lib::ZeroOneBoundedFloat;
     /// # use utils_lib::error::NoneError;
     ///
-    /// # fn test() -> Result<(), NoneError> {
-    /// let p1 = ZeroOneBoundedFloat::new(1_f64).ok_or(NoneError)?;
-    /// let p2 = ZeroOneBoundedFloat::new(2_f64).ok_or(NoneError)?;
+    /// # fn main() -> Result<(), NoneError> {
+    /// let p1 = ZeroOneBoundedFloat::new(0.3_f64).ok_or(NoneError)?;
+    /// let p2 = ZeroOneBoundedFloat::new(0.6_f64).ok_or(NoneError)?;
     ///
     /// assert_eq!(p1.checked_sub(p2), None);
     /// assert_eq!(
     ///     p2.checked_sub(p1),
-    ///     Some(ZeroOneBoundedFloat::new(1_f64).ok_or(NoneError)?)
+    ///     Some(ZeroOneBoundedFloat::new(0.3_f64).ok_or(NoneError)?)
     /// );
     /// # Ok(())
     /// # }
@@ -226,7 +281,7 @@ impl ZeroOneBoundedFloat {
     /// use utils_lib::ZeroOneBoundedFloat;
     /// # use utils_lib::error::NoneError;
     ///
-    /// # fn test() -> Result<(), NoneError> {
+    /// # fn main() -> Result<(), NoneError> {
     /// let p1 = ZeroOneBoundedFloat::new(0.5_f64).ok_or(NoneError)?;
     /// let p2 = ZeroOneBoundedFloat::new(0.4_f64).ok_or(NoneError)?;
     /// let p3 = ZeroOneBoundedFloat::new(0.6_f64).ok_or(NoneError)?;
@@ -255,7 +310,7 @@ impl ZeroOneBoundedFloat {
     /// use utils_lib::ZeroOneBoundedFloat;
     /// # use utils_lib::error::NoneError;
     ///
-    /// # fn test() -> Result<(), NoneError> {
+    /// # fn main() -> Result<(), NoneError> {
     /// let p1 = ZeroOneBoundedFloat::new(0.5_f64).ok_or(NoneError)?;
     /// let p2 = ZeroOneBoundedFloat::new(0.4_f64).ok_or(NoneError)?;
     /// let p3 = ZeroOneBoundedFloat::new(0.6_f64).ok_or(NoneError)?;
@@ -283,25 +338,6 @@ impl AsRef<f64> for ZeroOneBoundedFloat {
     }
 }
 
-impl One for ZeroOneBoundedFloat {
-    #[inline]
-    fn one() -> Self {
-        Self::ONE
-    }
-}
-
-impl Bounded for ZeroOneBoundedFloat {
-    #[inline]
-    fn min_value() -> Self {
-        Self::ZERO
-    }
-
-    #[inline]
-    fn max_value() -> Self {
-        Self::ONE
-    }
-}
-
 impl Validation for ZeroOneBoundedFloat {
     #[inline]
     fn validate_data(t: f64) -> bool {
@@ -313,13 +349,10 @@ impl Validation for ZeroOneBoundedFloat {
 
     #[inline]
     fn set_float(&mut self, float: f64) {
-        self.0 = if Self::validate_data(float) {
-            float
-        } else if float.classify() != FpCategory::Nan && float >= 1_f64 {
-            1_f64
-        } else {
-            // float is <= 0 or NaN
-            0_f64
+        self.0 = match Self::float_range(float) {
+            BoundRange::InRange => float,
+            BoundRange::UpperBound => 1_f64,
+            BoundRange::LowerRange => 0_f64,
         };
     }
 }
@@ -367,6 +400,20 @@ mod test {
         assert!(ZeroOneBoundedFloat::new(0.99_f64).is_some());
         assert!(ZeroOneBoundedFloat::new(0.9_f64).is_some());
         assert!(ZeroOneBoundedFloat::new(0.5_f64).is_some());
+
+        assert_eq!(
+            ZeroOneBoundedFloat::new_or_bounded(f64::INFINITY),
+            ZeroOneBoundedFloat::ONE
+        );
+
+        assert_eq!(
+            ZeroOneBoundedFloat::new_or_bounded(-1_f64),
+            ZeroOneBoundedFloat::ZERO,
+        );
+        assert_eq!(
+            ZeroOneBoundedFloat::new_or_bounded(1_f64),
+            ZeroOneBoundedFloat::ONE
+        );
 
         let mut t = ZeroOneBoundedFloat::new(1_f64).ok_or(NoneError)?;
         assert_eq!(*t.float_mut(), 1_f64);
