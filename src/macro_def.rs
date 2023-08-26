@@ -1,3 +1,5 @@
+//! Contains the macro definitions
+
 /// impl Op trait for a given type
 #[macro_export]
 macro_rules! impl_op_trait {

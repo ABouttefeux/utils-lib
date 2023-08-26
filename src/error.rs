@@ -1,3 +1,5 @@
+//! Contains the errors definitions
+
 use std::{
     error::Error,
     fmt::{self, Display},
@@ -6,6 +8,7 @@ use std::{
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// The error equivalent of getting a [`None`] on an [`Option`]
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

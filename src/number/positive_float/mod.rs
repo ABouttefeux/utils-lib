@@ -6,6 +6,7 @@ mod num_traits_impl;
 
 use std::{
     cmp::Ordering,
+    error::Error,
     fmt::{self, Display, LowerExp, UpperExp},
     hash::{Hash, Hasher},
     num::FpCategory,
@@ -16,6 +17,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use super::{compare_f64, Validation, ValidationGuard};
+use crate::ZeroOneBoundedFloat;
 
 /// A float that is `>= 0` and is not [`f64::NAN`] or [`f64::INFINITY`].
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -86,6 +88,8 @@ enum BoundRange {
     InRange,
     /// Strictly below 0
     LowerRange,
+    /// Not a number
+    Nan,
 }
 
 impl PositiveFloat {
@@ -102,6 +106,8 @@ impl PositiveFloat {
     fn float_range(float: f64) -> BoundRange {
         if Self::validate_data(float) {
             BoundRange::InRange
+        } else if float.is_nan() {
+            BoundRange::Nan
         } else if float == f64::INFINITY {
             BoundRange::UpperBound
         } else {
@@ -109,27 +115,91 @@ impl PositiveFloat {
         }
     }
 
+    /// Create a wrapped value skipping the validity check
+    ///
+    /// # Safety
+    /// make sure that the float is valid
+    #[cfg_attr(debug_assertions, allow(dead_code))] // it is used by new_partially_check
+    #[must_use]
+    #[inline]
+    const unsafe fn new_unchecked(float: f64) -> Self {
+        Self(float)
+    }
+
+    /// Create a wrapped value doing the validity check only when [`debug_assertions`]
+    /// and panics if the value is not valid. Otherwise it wraps the value even if it is not valid
+    ///
+    /// # Panic
+    /// Panics if the value if not valid and [`debug_assertions`] is on
+    ///
+    /// # Safety
+    /// make sure that the float is valid
+    #[cfg(not(debug_assertions))]
+    #[must_use]
+    #[inline]
+    unsafe fn new_partially_check(float: f64) -> Self {
+        Self::new_unchecked(float)
+    }
+
+    /// Create a wrapped value doing the validity check only when [`debug_assertions`]
+    /// and panics if the value is not valid. Otherwise it wraps the value even if it is not valid
+    ///
+    /// # Panic
+    /// Panics if the value if not valid and [`debug_assertions`] is on
+    ///
+    /// # Safety
+    /// make sure that the float is valid
+    #[cfg(debug_assertions)]
+    #[must_use]
+    #[inline]
+    unsafe fn new_partially_check(float: f64) -> Self {
+        Self::new(float).expect("invalid value")
+    }
+
     /// Create a new Self from a [`f64`]. It returns [`Some`] only if the float is valid ([`Self::validate_data`]), i.e.
     /// it is >= 0 it is not [`f64::NAN`] and not [`f64::INFINITY`].
     ///
     /// # Example
     /// ```
+    /// use utils_lib::number::PositiveFloatConversionError;
     /// use utils_lib::PositiveFloat;
     ///
-    /// assert!(PositiveFloat::new(0_f64).is_some());
-    /// assert!(PositiveFloat::new(2.5_f64).is_some());
-    /// assert!(PositiveFloat::new(6.7E10_f64).is_some());
+    /// # fn main() -> Result<(), PositiveFloatConversionError> {
+    /// PositiveFloat::new(0_f64)?;
+    /// PositiveFloat::new(2.5_f64)?;
+    /// PositiveFloat::new(6.7E10_f64)?;
     ///
-    /// assert_eq!(PositiveFloat::new(f64::INFINITY), None);
-    /// assert_eq!(PositiveFloat::new(-f64::INFINITY), None);
-    /// assert_eq!(PositiveFloat::new(-f64::NAN), None);
-    /// assert_eq!(PositiveFloat::new(-1_f64), None);
-    /// assert_eq!(PositiveFloat::new(-100_f64), None);
+    /// assert_eq!(
+    ///     PositiveFloat::new(f64::INFINITY),
+    ///     Err(PositiveFloatConversionError::Infinity)
+    /// );
+    /// assert_eq!(
+    ///     PositiveFloat::new(-f64::INFINITY),
+    ///     Err(PositiveFloatConversionError::TooLow)
+    /// );
+    /// assert_eq!(
+    ///     PositiveFloat::new(-f64::NAN),
+    ///     Err(PositiveFloatConversionError::Nan)
+    /// );
+    /// assert_eq!(
+    ///     PositiveFloat::new(-1_f64),
+    ///     Err(PositiveFloatConversionError::TooLow)
+    /// );
+    /// assert_eq!(
+    ///     PositiveFloat::new(-100_f64),
+    ///     Err(PositiveFloatConversionError::TooLow)
+    /// );
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
-    #[must_use]
-    pub fn new(float: f64) -> Option<Self> {
-        Self::validate_data(float).then_some(Self(float))
+    pub fn new(float: f64) -> Result<Self, ConversionError> {
+        match Self::float_range(float) {
+            BoundRange::InRange => Ok(Self(float)),
+            BoundRange::LowerRange => Err(ConversionError::TooLow),
+            BoundRange::Nan => Err(ConversionError::Nan),
+            BoundRange::UpperBound => Err(ConversionError::Infinity),
+        }
     }
 
     /// Create a new Self with the float as value if it is valid ( `>= 0` finite and not [`f64::NAN`])
@@ -138,20 +208,20 @@ impl PositiveFloat {
     /// # Example
     /// ```
     /// use utils_lib::PositiveFloat;
-    /// # use utils_lib::error::NoneError;
+    /// # use utils_lib::number::positive_float::ConversionError;
     ///
-    /// # fn main() -> Result<(), NoneError> {
+    /// # fn main() -> Result<(), ConversionError> {
     /// assert_eq!(
     ///     PositiveFloat::new_or_default(0_f64),
-    ///     PositiveFloat::new(0_f64).ok_or(NoneError)?
+    ///     PositiveFloat::new(0_f64)?
     /// );
     /// assert_eq!(
     ///     PositiveFloat::new_or_default(2.5_f64),
-    ///     PositiveFloat::new(2.5_f64).ok_or(NoneError)?
+    ///     PositiveFloat::new(2.5_f64)?
     /// );
     /// assert_eq!(
     ///     PositiveFloat::new_or_default(6.7E10_f64),
-    ///     PositiveFloat::new(6.7E10_f64).ok_or(NoneError)?
+    ///     PositiveFloat::new(6.7E10_f64)?
     /// );
     ///
     /// assert_eq!(
@@ -184,7 +254,7 @@ impl PositiveFloat {
     }
 
     // Create a new Self with the float as value if it is valid ( `>= 0` finite and not [`f64::NAN`])
-    /// or return 0 or to [`f6::MAX`] if the value is infinity instead.
+    /// or return 0 or to [`f64::MAX`] if the value is infinity instead.
     ///
     /// Note that contrary to [`Self::new_or_default`] when given infinity it gives bac [`Self::MAX`]
     /// ```
@@ -209,12 +279,12 @@ impl PositiveFloat {
         match Self::float_range(float) {
             BoundRange::InRange => Self(float),
             BoundRange::UpperBound => Self::MAX,
-            BoundRange::LowerRange => Self::ZERO,
+            BoundRange::LowerRange | BoundRange::Nan => Self::ZERO,
         }
     }
 
     /// Get the underling float. It could also be accessed by using [`Deref`],
-    /// note that [`DerefMut`] is not implemented.
+    /// note that [`std::ops::DerefMut`] is not implemented.
     #[inline]
     #[must_use]
     pub const fn float(self) -> f64 {
@@ -222,7 +292,7 @@ impl PositiveFloat {
     }
 
     /// Returns a way to mut the underlying float. If the final value is not valid,
-    /// It is set to 0 or to [`f6::MAX`] if the value is infinity. See [`NumberValidationGuard`].
+    /// It is set to 0 or to [`f64::MAX`] if the value is infinity. See [`ValidationGuard`].
     #[inline]
     #[must_use]
     pub fn float_mut(&'_ mut self) -> ValidationGuard<'_, Self> {
@@ -235,27 +305,30 @@ impl PositiveFloat {
     /// Returns the value of the subtraction of two numbers if it doesn't underflow.
     /// It works in the same spirit as [`usize::checked_sub`].
     ///
+    /// # Errors
+    ///
+    /// See [`Self::new`]
+    ///
     /// # Example
     ///
     /// ```
     /// use utils_lib::PositiveFloat;
-    /// # use utils_lib::error::NoneError;
+    /// # use utils_lib::number::PositiveFloatConversionError;
     ///
-    /// # fn main() -> Result<(), NoneError> {
-    /// let p1 = PositiveFloat::new(1_f64).ok_or(NoneError)?;
-    /// let p2 = PositiveFloat::new(2_f64).ok_or(NoneError)?;
+    /// # fn main() -> Result<(), PositiveFloatConversionError> {
+    /// let p1 = PositiveFloat::new(1_f64)?;
+    /// let p2 = PositiveFloat::new(2_f64)?;
     ///
-    /// assert_eq!(p1.checked_sub(p2), None);
     /// assert_eq!(
-    ///     p2.checked_sub(p1),
-    ///     Some(PositiveFloat::new(1_f64).ok_or(NoneError)?)
+    ///     p1.checked_sub(p2),
+    ///     Err(PositiveFloatConversionError::TooLow)
     /// );
+    /// assert_eq!(p2.checked_sub(p1), Ok(PositiveFloat::new(1_f64)?));
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    #[must_use]
-    pub fn checked_sub(self, other: Self) -> Option<Self> {
+    pub fn checked_sub(self, other: Self) -> Result<Self, ConversionError> {
         Self::new(self.float() - other.float())
     }
 
@@ -265,20 +338,14 @@ impl PositiveFloat {
     /// # Example
     /// ```
     /// use utils_lib::PositiveFloat;
-    /// # use utils_lib::error::NoneError;
+    /// # use utils_lib::number::PositiveFloatConversionError;
     ///
-    /// # fn main() -> Result<(), NoneError> {
-    /// let p1 = PositiveFloat::new(1_f64).ok_or(NoneError)?;
-    /// let p2 = PositiveFloat::new(2_f64).ok_or(NoneError)?;
+    /// # fn main() -> Result<(), PositiveFloatConversionError> {
+    /// let p1 = PositiveFloat::new(1_f64)?;
+    /// let p2 = PositiveFloat::new(2_f64)?;
     ///
-    /// assert_eq!(
-    ///     p1.saturating_sub(p2),
-    ///     PositiveFloat::new(0_f64).ok_or(NoneError)?
-    /// );
-    /// assert_eq!(
-    ///     p2.saturating_sub(p1),
-    ///     PositiveFloat::new(1_f64).ok_or(NoneError)?
-    /// );
+    /// assert_eq!(p1.saturating_sub(p2), PositiveFloat::new(0_f64)?);
+    /// assert_eq!(p2.saturating_sub(p1), PositiveFloat::new(1_f64)?);
     /// # Ok(())
     /// # }
     /// ```
@@ -296,6 +363,62 @@ impl AsRef<f64> for PositiveFloat {
     }
 }
 
+/// Error for the conversion form a [`f64`] to a [`PositiveFloat`]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[non_exhaustive]
+pub enum ConversionError {
+    /// The float is < 0
+    TooLow,
+    /// The float is [`f64::NAN`]
+    Nan,
+    /// The float is too big, i.e. [`f64::INFINITY`]
+    Infinity,
+}
+
+impl Display for ConversionError {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Infinity => write!(f, "the float is infinity"),
+            Self::Nan => write!(f, "the float is not a number"),
+            Self::TooLow => write!(f, "the float is below zero"),
+        }
+    }
+}
+
+impl Error for ConversionError {
+    #[inline]
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Infinity | Self::Nan | Self::TooLow => None,
+        }
+    }
+}
+
+impl From<ZeroOneBoundedFloat> for PositiveFloat {
+    #[cfg(debug_assertions)]
+    #[inline]
+    fn from(value: ZeroOneBoundedFloat) -> Self {
+        Self::new(value.float()).expect("always positive")
+    }
+
+    #[cfg(not(debug_assertions))]
+    #[inline]
+    fn from(value: ZeroOneBoundedFloat) -> Self {
+        unsafe { Self::new_unchecked(value.float()) }
+    }
+}
+
+impl TryFrom<f64> for PositiveFloat {
+    type Error = ConversionError;
+
+    #[inline]
+    fn try_from(float: f64) -> Result<Self, Self::Error> {
+        Self::new(float)
+    }
+}
+
 impl Validation for PositiveFloat {
     #[inline]
     fn validate_data(t: f64) -> bool {
@@ -310,59 +433,57 @@ impl Validation for PositiveFloat {
         self.0 = match Self::float_range(float) {
             BoundRange::InRange => float,
             BoundRange::UpperBound => f64::MAX,
-            BoundRange::LowerRange => 0_f64,
+            BoundRange::LowerRange | BoundRange::Nan => 0_f64,
         }
     }
 }
 
 #[cfg(test)]
 mod test {
+    use super::ConversionError;
     use crate::{error::NoneError, PositiveFloat};
 
     #[test]
-    fn positive_float_const() -> Result<(), NoneError> {
-        assert_eq!(
-            PositiveFloat::default(),
-            PositiveFloat::new(0_f64).ok_or(NoneError)?
-        );
+    fn positive_float_const() -> Result<(), ConversionError> {
+        assert_eq!(PositiveFloat::default(), PositiveFloat::new(0_f64)?);
 
-        assert_eq!(
-            PositiveFloat::ZERO,
-            PositiveFloat::new(0_f64).ok_or(NoneError)?
-        );
+        assert_eq!(PositiveFloat::ZERO, PositiveFloat::new(0_f64)?);
 
-        assert_eq!(
-            PositiveFloat::ONE,
-            PositiveFloat::new(1_f64).ok_or(NoneError)?
-        );
+        assert_eq!(PositiveFloat::ONE, PositiveFloat::new(1_f64)?);
 
         Ok(())
     }
 
     #[allow(clippy::float_cmp)] // reason = "This is fine, the test is made such that comparing float is ok."
     #[test]
-    fn positive_float() -> Result<(), NoneError> {
-        assert_eq!(PositiveFloat::new(f64::INFINITY), None);
-        assert_eq!(PositiveFloat::new(-f64::INFINITY), None);
-        assert_eq!(PositiveFloat::new(-f64::NAN), None);
-        assert_eq!(PositiveFloat::new(-1_f64), None);
-        assert_eq!(PositiveFloat::new(-100_f64), None);
-        assert_eq!(PositiveFloat::new(-0_f64), Some(PositiveFloat::default()));
-        assert!(PositiveFloat::new(1000_f64).is_some());
-        assert!(PositiveFloat::new(2e32_f64).is_some());
-        assert!(PositiveFloat::new(2e-32_f64).is_some());
-        assert!(PositiveFloat::new(f64::MIN_POSITIVE).is_some());
-        assert!(PositiveFloat::new(-2e-32_f64).is_none());
+    fn positive_float() -> Result<(), ConversionError> {
+        assert_eq!(
+            PositiveFloat::new(f64::INFINITY),
+            Err(ConversionError::Infinity)
+        );
+        assert_eq!(
+            PositiveFloat::new(-f64::INFINITY),
+            Err(ConversionError::TooLow)
+        );
+        assert_eq!(PositiveFloat::new(-f64::NAN), Err(ConversionError::Nan));
+        assert_eq!(PositiveFloat::new(-1_f64), Err(ConversionError::TooLow));
+        assert_eq!(PositiveFloat::new(-100_f64), Err(ConversionError::TooLow));
+        assert_eq!(PositiveFloat::new(-0_f64), Ok(PositiveFloat::default()));
+        PositiveFloat::new(1000_f64)?;
+        PositiveFloat::new(2e32_f64)?;
+        PositiveFloat::new(2e-32_f64)?;
+        PositiveFloat::new(f64::MIN_POSITIVE)?;
+        assert_eq!(PositiveFloat::new(-2e-32_f64), Err(ConversionError::TooLow));
 
         assert_eq!(
             PositiveFloat::new_or_bounded(f64::INFINITY),
-            PositiveFloat::new(f64::MAX).ok_or(NoneError)?
+            PositiveFloat::new(f64::MAX)?
         );
 
         assert_eq!(PositiveFloat::new_or_bounded(-1_f64), PositiveFloat::ZERO,);
         assert_eq!(PositiveFloat::new_or_bounded(1_f64), PositiveFloat::ONE);
 
-        let mut t = PositiveFloat::new(1_f64).ok_or(NoneError)?;
+        let mut t = PositiveFloat::new(1_f64)?;
         assert_eq!(*t.float_mut(), 1_f64);
         *t.float_mut() = 2_f64;
         assert_eq!(t.float(), 2_f64);
@@ -375,18 +496,12 @@ mod test {
     }
 
     #[test]
-    fn saturating_sub() -> Result<(), NoneError> {
-        let p1 = PositiveFloat::new(1_f64).ok_or(NoneError)?;
-        let p2 = PositiveFloat::new(2_f64).ok_or(NoneError)?;
+    fn saturating_sub() -> Result<(), ConversionError> {
+        let p1 = PositiveFloat::new(1_f64)?;
+        let p2 = PositiveFloat::new(2_f64)?;
 
-        assert_eq!(
-            p1.saturating_sub(p2),
-            PositiveFloat::new(0_f64).ok_or(NoneError)?
-        );
-        assert_eq!(
-            p2.saturating_sub(p1),
-            PositiveFloat::new(1_f64).ok_or(NoneError)?
-        );
+        assert_eq!(p1.saturating_sub(p2), PositiveFloat::new(0_f64)?);
+        assert_eq!(p2.saturating_sub(p1), PositiveFloat::new(1_f64)?);
 
         Ok(())
     }

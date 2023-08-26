@@ -10,6 +10,8 @@ use crate::number::abs_diff;
 
 // TODO conversion for Axis2D
 
+/// Represent the Axis in 2 dimensions. It can be either in the `x` direction i.e. [`Self::Vertical`]
+/// or the `y` direction, i.e. [`Self::Horizontal`].
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[allow(clippy::exhaustive_enums)] // reason = "no more variant possible"
@@ -22,6 +24,7 @@ pub enum Axis2D {
 }
 
 impl Axis2D {
+    /// All the possible axis
     pub const AXIS: [Self; 2] = [Self::Vertical, Self::Horizontal];
 
     #[inline]
@@ -52,6 +55,15 @@ impl Axis2D {
         }
     }
 
+    /// Get the perpendicular axis
+    ///
+    /// # Example
+    /// ```
+    /// # use utils_lib::coordinate::Axis2D;
+    ///
+    /// assert_eq!(Axis2D::Vertical.perpendicular(), Axis2D::Horizontal);
+    /// assert_eq!(Axis2D::Horizontal.perpendicular(), Axis2D::Vertical);
+    /// ```
     #[inline]
     #[must_use]
     pub const fn perpendicular(self) -> Self {

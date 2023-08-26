@@ -65,7 +65,7 @@ impl ToPrimitive for ZeroOneBoundedFloat {
 impl NumCast for ZeroOneBoundedFloat {
     #[inline]
     fn from<T: ToPrimitive>(n: T) -> Option<Self> {
-        Self::new(n.to_f64()?)
+        Self::new(n.to_f64()?).ok()
     }
 }
 
@@ -101,7 +101,7 @@ impl ToBytes for ZeroOneBoundedFloat {
 impl CheckedMul for ZeroOneBoundedFloat {
     #[inline]
     fn checked_mul(&self, v: &Self) -> Option<Self> {
-        Self::new(self.float() * v.float())
+        Self::new(self.float() * v.float()).ok()
     }
 }
 

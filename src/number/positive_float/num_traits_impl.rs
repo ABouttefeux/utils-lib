@@ -34,7 +34,7 @@ impl Bounded for PositiveFloat {
 
     #[inline]
     fn max_value() -> Self {
-        Self::new(f64::MAX).expect("always exist")
+        Self::MAX
     }
 }
 
@@ -50,7 +50,7 @@ macro_rules! impl_float_const {
         #[cfg(not(debug_assertions))]
         #[inline]
         fn $fn() -> Self {
-            Self(f64::$fn())
+            unsafe { Self::new_unchecked(f64::$fn()) }
         }
     };
 }
@@ -115,7 +115,7 @@ impl ToPrimitive for PositiveFloat {
 impl NumCast for PositiveFloat {
     #[inline]
     fn from<T: ToPrimitive>(n: T) -> Option<Self> {
-        Self::new(n.to_f64()?)
+        Self::new(n.to_f64()?).ok()
     }
 }
 
@@ -128,6 +128,8 @@ impl NumCast for PositiveFloat {
 impl Pow<Self> for PositiveFloat {
     type Output = Self;
 
+    // TODO
+
     #[cfg(debug_assertions)]
     #[inline]
     fn pow(self, rhs: Self) -> Self::Output {
@@ -137,7 +139,7 @@ impl Pow<Self> for PositiveFloat {
     #[cfg(not(debug_assertions))]
     #[inline]
     fn pow(self, rhs: Self) -> Self::Output {
-        Self(self.float().pow(rhs.float()))
+        unsafe { Self::new_unchecked(self.float().pow(rhs.float())) }
     }
 }
 
@@ -158,7 +160,7 @@ impl ToBytes for PositiveFloat {
 impl CheckedAdd for PositiveFloat {
     #[inline]
     fn checked_add(&self, v: &Self) -> Option<Self> {
-        Self::new(self.float() + v.float())
+        Self::new(self.float() + v.float()).ok()
     }
 }
 
@@ -167,7 +169,7 @@ impl CheckedAdd for PositiveFloat {
 impl CheckedMul for PositiveFloat {
     #[inline]
     fn checked_mul(&self, v: &Self) -> Option<Self> {
-        Self::new(self.float() * v.float())
+        Self::new(self.float() * v.float()).ok()
     }
 }
 
@@ -177,7 +179,7 @@ impl CheckedDiv for PositiveFloat {
         if v.float() == 0_f64 {
             None
         } else {
-            Self::new(self.float() / v.float())
+            Self::new(self.float() / v.float()).ok()
         }
     }
 }
@@ -195,18 +197,20 @@ impl Inv for PositiveFloat {
 impl MulAdd for PositiveFloat {
     type Output = Self;
 
+    // TODO
+
     #[inline]
     #[cfg(debug_assertions)]
     fn mul_add(self, a: Self, b: Self) -> Self::Output {
         let mul_add = self.float().mul_add(a.float(), b.float());
-        Self::new(mul_add).expect("always exist")
+        Self::new(mul_add).expect("invalid value")
     }
 
     #[inline]
     #[cfg(not(debug_assertions))]
     fn mul_add(self, a: Self, b: Self) -> Self::Output {
         let mul_add = self.float().mul_add(a.float(), b.float());
-        Self(mul_add)
+        unsafe { Self::new_unchecked(mul_add) }
     }
 }
 
