@@ -486,7 +486,6 @@ impl Validation for ZeroOneBoundedFloat {
 #[cfg(test)]
 mod test {
     use super::{super::Validation, ConversionError, ZeroOneBoundedFloat};
-    use crate::error::NoneError;
 
     #[test]
     fn zero_one_bounded_float_const() -> Result<(), ConversionError> {

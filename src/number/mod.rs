@@ -1,6 +1,7 @@
-mod fuction;
+mod function;
 mod num_op_traits;
 pub mod positive_float;
+pub mod sign;
 pub mod zero_one_bounded_float;
 
 use std::{
@@ -15,8 +16,9 @@ use serde::Serialize;
 
 // TODO conversion
 // TODO num traits
-pub use self::fuction::{abs_diff, gcd, lcm};
+pub use self::function::{abs_diff, gcd, lcm};
 pub use self::positive_float::{ConversionError as PositiveFloatConversionError, PositiveFloat};
+pub use self::sign::Sign;
 pub use self::zero_one_bounded_float::{
     ConversionError as ZeroOneBoundedFloatConversionError, ZeroOneBoundedFloat,
 };

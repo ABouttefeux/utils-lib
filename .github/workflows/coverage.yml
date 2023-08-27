@@ -30,7 +30,7 @@ jobs:
           export RUSTFLAGS="-Zinstrument-coverage"
           export RUSTDOCFLAGS="-Zinstrument-coverage -Zunstable-options --persist-doctests target/debug/doctestbins"
           cargo +nightly build --verbose --all
-          LLVM_PROFILE_FILE="utils-lib-%p-%m.profraw" cargo +nightly test --verbose --workspace --exclude utils-lib-derive --exclude macro-utils
+          LLVM_PROFILE_FILE="utils-lib-%p-%m.profraw" cargo +nightly test --verbose --all
 
       - name: parse code coverage
         run: ./grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info

@@ -161,6 +161,18 @@ fn find_name(iter: &mut IntoIter) -> Ident {
     Ident::new(i.to_string().as_str(), Span::call_site())
 }
 
+/// Derive the `Sealed` trait
+#[proc_macro_derive(Sealed)]
+pub fn derive_sealed(item: TokenStream) -> TokenStream {
+    let item: TokenStream2 = item.into();
+    let name = find_name(&mut item.into_iter());
+
+    quote!(
+        impl crate::private::Sealed for #name {}
+    )
+    .into()
+}
+
 #[proc_macro_derive(Getter, attributes(get))]
 pub fn derive_getter(item: TokenStream) -> TokenStream {
     // Let us find the inner part of the structure

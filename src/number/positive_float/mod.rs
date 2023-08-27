@@ -440,8 +440,7 @@ impl Validation for PositiveFloat {
 
 #[cfg(test)]
 mod test {
-    use super::ConversionError;
-    use crate::{error::NoneError, PositiveFloat};
+    use super::{ConversionError, PositiveFloat};
 
     #[test]
     fn positive_float_const() -> Result<(), ConversionError> {

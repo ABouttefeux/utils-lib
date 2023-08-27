@@ -1,3 +1,5 @@
+//! Module containing [`Coordinate`] and [`Axis2D`]
+
 use std::{
     iter::{self, FusedIterator},
     ops::{Add, AddAssign, Not, Sub, SubAssign},
@@ -27,6 +29,18 @@ impl Axis2D {
     /// All the possible axis
     pub const AXIS: [Self; 2] = [Self::Vertical, Self::Horizontal];
 
+    /// Convert an index into an [`Axis2D`]
+    ///
+    /// # Example
+    /// ```
+    /// use utils_lib::coordinate::Axis2D;
+    ///
+    /// assert_eq!(Axis2D::from_index(0), Some(Axis2D::Vertical));
+    /// assert_eq!(Axis2D::from_index(1), Some(Axis2D::Horizontal));
+    /// assert_eq!(Axis2D::from_index(2), None);
+    /// assert_eq!(Axis2D::from_index(3), None);
+    /// //...
+    /// ```
     #[inline]
     #[must_use]
     pub const fn from_index(index: usize) -> Option<Self> {
@@ -37,6 +51,15 @@ impl Axis2D {
         }
     }
 
+    /// Convert an [`Axis2D`] into an index
+    ///
+    /// # Example
+    /// ```
+    /// use utils_lib::coordinate::Axis2D;
+    ///
+    /// assert_eq!(Axis2D::Vertical.to_index(), 0);
+    /// assert_eq!(Axis2D::Horizontal.to_index(), 1);
+    /// ```
     #[inline]
     #[must_use]
     pub const fn to_index(self) -> usize {
@@ -46,6 +69,15 @@ impl Axis2D {
         }
     }
 
+    /// Convert an [`Axis2D`] as an index
+    ///
+    /// # Example
+    /// ```
+    /// use utils_lib::coordinate::Axis2D;
+    ///
+    /// assert_eq!(Axis2D::Vertical.as_index(), &0);
+    /// assert_eq!(Axis2D::Horizontal.as_index(), &1);
+    /// ```
     #[inline]
     #[must_use]
     pub const fn as_index(self) -> &'static usize {
@@ -59,7 +91,7 @@ impl Axis2D {
     ///
     /// # Example
     /// ```
-    /// # use utils_lib::coordinate::Axis2D;
+    /// use utils_lib::coordinate::Axis2D;
     ///
     /// assert_eq!(Axis2D::Vertical.perpendicular(), Axis2D::Horizontal);
     /// assert_eq!(Axis2D::Horizontal.perpendicular(), Axis2D::Vertical);
@@ -73,6 +105,15 @@ impl Axis2D {
         }
     }
 
+    /// Convert an [`Axis2D`] into a cardinal direction in the form of a [`Coordinate::<usize>`]
+    ///
+    /// # Example
+    /// ```
+    /// use utils_lib::coordinate::{Axis2D, Coordinate};
+    ///
+    /// assert_eq!(Axis2D::Vertical.coordinate_usize(), Coordinate::new(1, 0));
+    /// assert_eq!(Axis2D::Horizontal.coordinate_usize(), Coordinate::new(0, 1));
+    /// ```
     #[inline]
     #[must_use]
     pub const fn coordinate_usize(self) -> Coordinate<usize> {
@@ -94,44 +135,53 @@ impl Not for Axis2D {
 
 // TODO conversion Coord
 
+/// A two dimensional vector.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Coordinate<T> {
-    x: T,
-    y: T,
+    /// the x coordinate
+    pub x: T,
+    /// the y coordinate
+    pub y: T,
 }
 
 impl<T> Coordinate<T> {
+    /// Create a new [`Coordinate`] with two values for, respectively, the x and y coordinate.
     #[inline]
     #[must_use]
     pub const fn new(x: T, y: T) -> Self {
         Self { x, y }
     }
 
+    /// Get the x coordinate.
     #[inline]
     #[must_use]
     pub const fn x(&self) -> &T {
         &self.x
     }
 
+    /// Get a mut reference on the x coordinate.
     #[inline]
     #[must_use]
     pub fn x_mut(&mut self) -> &mut T {
         &mut self.x
     }
 
+    /// Get the y coordinate.
     #[inline]
     #[must_use]
     pub const fn y(&self) -> &T {
         &self.y
     }
 
+    /// Get a mut reference on the y coordinate.
     #[inline]
     #[must_use]
     pub fn y_mut(&mut self) -> &mut T {
         &mut self.y
     }
 
+    /// Get the coordinate given by the [`Axis2D`] direction.
     #[inline]
     #[must_use]
     pub const fn get(&self, axis: Axis2D) -> &T {
@@ -141,6 +191,7 @@ impl<T> Coordinate<T> {
         }
     }
 
+    /// Get a mutable reference on the coordinate given by the [`Axis2D`] direction.
     #[inline]
     #[must_use]
     pub fn get_mut(&mut self, axis: Axis2D) -> &mut T {
@@ -151,46 +202,54 @@ impl<T> Coordinate<T> {
     }
 
     // TODO own iterator for ExactSizeIterator
+    /// Get an iterator on the coordinate elements
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &T> + FusedIterator {
         iter::once(self.x()).chain(iter::once(self.y()))
     }
 
+    /// Get an iterator on the coordinate elements as mutable reference
     #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> + FusedIterator {
         iter::once(&mut self.x).chain(iter::once(&mut self.y))
     }
 
+    /// Get the [`Coordinate`] as a tuple references
     #[inline]
     #[must_use]
     pub const fn as_tuple(&self) -> (&T, &T) {
         (self.x(), self.y())
     }
 
+    /// Get the [`Coordinate`] as a tuple mut references
     #[inline]
     #[must_use]
     pub fn as_tuple_mut(&mut self) -> (&mut T, &mut T) {
         (&mut self.x, &mut self.y)
     }
 
+    /// Get the [`Coordinate`] as an array references
     #[inline]
     #[must_use]
     pub const fn as_array(&self) -> [&T; 2] {
         [self.x(), self.y()]
     }
 
+    /// Get the [`Coordinate`] as an array mut references
     #[inline]
     #[must_use]
     pub fn as_array_mut(&mut self) -> [&mut T; 2] {
         [&mut self.x, &mut self.y]
     }
 
+    /// Get the [`Coordinate`] as a [`Coordinate`] references
     #[inline]
     #[must_use]
     pub const fn as_ref(&self) -> Coordinate<&T> {
         Coordinate::new(self.x(), self.y())
     }
 
+    /// Get the [`Coordinate`] as a [`Coordinate`] mut references
     #[inline]
     #[must_use]
     pub fn as_mut(&mut self) -> Coordinate<&mut T> {
@@ -199,12 +258,14 @@ impl<T> Coordinate<T> {
 }
 
 impl<T> Coordinate<T> {
+    /// Get the [`Coordinate`] as a tuple
     #[inline]
     #[must_use]
     pub fn into_tuple(self) -> (T, T) {
         (self.x, self.y)
     }
 
+    /// Get the [`Coordinate`] as an array
     #[inline]
     #[must_use]
     pub fn into_array(self) -> [T; 2] {
@@ -214,12 +275,16 @@ impl<T> Coordinate<T> {
 
 // ~const Drop
 impl<T: Copy> Coordinate<T> {
+    /// Get the [`Coordinate`] as a tuple.
+    /// This is a const function.
     #[inline]
     #[must_use]
     pub const fn into_tuple_const(self) -> (T, T) {
         (self.x, self.y)
     }
 
+    /// Get the [`Coordinate`] as an array.
+    /// This is a const function.
     #[inline]
     #[must_use]
     pub const fn into_array_const(self) -> [T; 2] {
@@ -349,5 +414,17 @@ impl<T: Default> From<Vec<T>> for Coordinate<T> {
             iter.next().unwrap_or_default(),
             iter.next().unwrap_or_default(),
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::Axis2D;
+
+    #[test]
+    fn axis_2d() {
+        assert_eq!(!Axis2D::Vertical, Axis2D::Horizontal);
+        assert_eq!(!Axis2D::Horizontal, Axis2D::Vertical);
     }
 }
