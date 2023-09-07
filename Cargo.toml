@@ -25,3 +25,7 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 version-sync = "0.9.4"
+
+
+[profile.release]
+lto = true

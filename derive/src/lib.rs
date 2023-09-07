@@ -121,106 +121,89 @@
 
 //
 //---------------
+//#![warn(clippy::missing_docs_in_private_items)] // doc
 #![warn(missing_docs)] // doc
-#![warn(clippy::missing_docs_in_private_items)] // doc
 
 //--
 //#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize)]
 
+mod getter;
+mod sealed;
 #[cfg(test)]
 mod test;
 
 use proc_macro::TokenStream;
-use proc_macro2::{
-    token_stream::IntoIter, Delimiter, Ident, Span, TokenStream as TokenStream2,
-    TokenTree as TokenTree2,
-};
-use quote::quote;
+use proc_macro2::{TokenStream as TokenStream2, TokenTree as TokenTree2};
 
 //#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 
-/// Find the name of the type of the derive macro
-fn find_name(iter: &mut IntoIter) -> Ident {
-    let Some(TokenTree2::Ident(i)) = iter.find(|el| {
-        if let TokenTree2::Ident(ident) = el {
-            let s = ident.to_string();
-            s != "pub"
-                && s != "crate"
-                && s != "fn"
-                && s != "struct"
-                && s != "union"
-                && s != "enum"
-                && s != "for"
-        } else {
-            false
-        }
-    }) else {
-        panic!("no name found")
-    };
-
-    Ident::new(i.to_string().as_str(), Span::call_site())
-}
-
 /// Derive the `Sealed` trait
+///
+/// # Panic
+///
+/// panic if the derive macro is not applied to an struct, enum or union
+#[inline]
+#[must_use]
 #[proc_macro_derive(Sealed)]
 pub fn derive_sealed(item: TokenStream) -> TokenStream {
-    let item: TokenStream2 = item.into();
-    let name = find_name(&mut item.into_iter());
-
-    quote!(
-        impl crate::private::Sealed for #name {}
-    )
-    .into()
+    sealed::derive(item)
 }
 
-#[proc_macro_derive(Getter, attributes(get))]
+#[inline]
+#[must_use]
+#[proc_macro_derive(Getter, attributes(get, get_mut))]
 pub fn derive_getter(item: TokenStream) -> TokenStream {
-    // Let us find the inner part of the structure
-
-    let item: TokenStream2 = item.into();
-    let mut iter = item.into_iter();
-    let name = find_name(&mut iter);
-
-    let Some(TokenTree2::Group(group)) =
-        iter.find(|el| matches!(el, TokenTree2::Group(gp) if gp.delimiter() == Delimiter::Bracket))
-    else {
-        panic!("no groupe found")
-    };
-
-    let stream = group.stream();
-
-    let vector = stream.into_iter().collect::<Vec<_>>();
-
-    let vector = vector
-        .split(|el| matches!(el, TokenTree2::Punct(p) if p.as_char() == ','))
-        .collect::<Vec<_>>();
-
-    let code_vec = Vec::<TokenStream2>::new();
-
-    const MESSAGE_MISFORMED: &str = "misformed structure, no first element";
-
-    for array in vector {
-        let Some(element) = array.first() else {
-            panic!("{}", MESSAGE_MISFORMED)
-        };
-
-        let function_add_code = |_config: (), _ident: &Ident, _ty: &Ident| todo!();
-
-        match element {
-            TokenTree2::Punct(p) if p.as_char() == '#' => {
-                function_add_code((), todo!() /* array[2] */, todo!() /* array[4] */);
-            }
-            TokenTree2::Ident(ident) => {
-                function_add_code((), ident, todo!() /* array[2] */);
-            }
-            _ => panic!("{}", MESSAGE_MISFORMED),
-        }
-    }
-
-    quote! {
-        impl #name {
-            #(#code_vec)*
-        }
-    }
-    .into()
+    getter::derive_getter(item)
 }
+
+// #[proc_macro_derive(Getter, attributes(get))]
+// pub fn derive_getter(item: TokenStream) -> TokenStream {
+//     // Let us find the inner part of the structure
+
+//     let item: TokenStream2 = item.into();
+//     let mut iter = item.into_iter();
+//     let name = find_name(&mut iter).expect("no name found");
+
+//     let Some(TokenTree2::Group(group)) =
+//         iter.find(|el| matches!(el, TokenTree2::Group(gp) if gp.delimiter() == Delimiter::Bracket))
+//     else {
+//         panic!("no groupe found")
+//     };
+
+//     let stream = group.stream();
+
+//     let vector = stream.into_iter().collect::<Vec<_>>();
+
+//     let vector = vector
+//         .split(|el| matches!(el, TokenTree2::Punct(p) if p.as_char() == ','))
+//         .collect::<Vec<_>>();
+
+//     let code_vec = Vec::<TokenStream2>::new();
+
+//     const MESSAGE_MISFORMED: &str = "misformed structure, no first element";
+
+//     for array in vector {
+//         let Some(element) = array.first() else {
+//             panic!("{}", MESSAGE_MISFORMED)
+//         };
+
+//         let function_add_code = |_config: (), _ident: &Ident, _ty: &Ident| todo!();
+
+//         match element {
+//             TokenTree2::Punct(p) if p.as_char() == '#' => {
+//                 function_add_code((), todo!() /* array[2] */, todo!() /* array[4] */);
+//             }
+//             TokenTree2::Ident(ident) => {
+//                 function_add_code((), ident, todo!() /* array[2] */);
+//             }
+//             _ => panic!("{}", MESSAGE_MISFORMED),
+//         }
+//     }
+
+//     quote! {
+//         impl #name {
+//             #(#code_vec)*
+//         }
+//     }
+//     .into()
+// }

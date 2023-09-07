@@ -8,10 +8,16 @@ repository = "https://git.noxie.ch/ABouttefeux/utils-lib"
 license = "MIT OR Apache-2.0"
 publish = false
 
+
 [dependencies]
 quote = "1.0"
 syn = "2.0"
 proc-macro2 = "1.0"
 
+
 [dev-dependencies]
 version-sync = "0.9.4"
+
+
+[profile.release]
+lto = true
