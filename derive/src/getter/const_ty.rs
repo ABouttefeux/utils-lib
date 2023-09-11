@@ -1,9 +1,12 @@
 use std::fmt::{self, Display};
 
 use quote::quote;
-use syn::{Expr, ExprLit, Lit,  MetaNameValue};
+use syn::{Expr, ExprLit, Lit, MetaNameValue};
 
-use super::attribute_option::AttributeOptionParseUtils;
+use super::{
+    attribute_option::AttributeOptionParseUtils,
+    error::{AcceptableParseError, AttributeOptionParseError, UnacceptableParseError},
+};
 
 /// Option to determine if a getter should be constant or not.
 /// By default the getter is not constant.
@@ -52,23 +55,29 @@ impl AttributeOptionParseUtils for ConstTy {
     }
 
     #[inline]
-    fn parse_name_value(name_value: &MetaNameValue) -> Option<Self> {
-        if Self::left_hand_path_accepted(&name_value.path.get_ident()?.to_string()) {
+    fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, AttributeOptionParseError> {
+        if Self::left_hand_path_accepted(
+            &name_value
+                .path
+                .get_ident()
+                .ok_or(UnacceptableParseError::LeftHandSideValuePathIsNotIdent)?
+                .to_string(),
+        ) {
             if let Expr::Lit(ExprLit {
                 lit: Lit::Bool(lit_bool),
                 ..
             }) = &name_value.value
             {
                 if lit_bool.value() {
-                    Some(Self::Constant)
+                    Ok(Self::Constant)
                 } else {
-                    Some(Self::NonConstant)
+                    Ok(Self::NonConstant)
                 }
             } else {
-                None
+                Err(UnacceptableParseError::RightHandValueInvalid.into())
             }
         } else {
-            None
+            Err(AcceptableParseError::LeftHandSideValueNotRecognized.into())
         }
     }
 

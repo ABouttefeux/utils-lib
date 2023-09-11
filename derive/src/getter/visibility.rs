@@ -1,7 +1,8 @@
-use proc_macro2::Ident;
-use syn::{Expr, ExprLit, Lit, Meta, MetaNameValue, Path};
+use proc_macro2::TokenStream as TokenStream2;
+use quote::quote;
+use syn::Field;
 
-use super::AttributeOptionParse;
+use super::attribute_option::{AttributeOptionParseUtils, ToCode};
 
 /// Visibility option
 ///
@@ -28,31 +29,31 @@ impl Visibility {
     /// visibility =
     const VISIBILITY_LEFT_HAND: &'static str = "visibility";
 
-    /// Try to parse a [`Visibility`] option from a [`Meta`]
-    #[inline]
-    pub fn visibility_option(option: &Meta) -> Option<Self> {
-        match option {
-            Meta::Path(path) => Self::visibility_from_path(path),
-            Meta::NameValue(name_value) => Self::visibility_from_name_value(name_value),
-            // FIX ME
-            Meta::List(meta_list) => {
-                if meta_list.path.is_ident(Self::VISIBILITY_LEFT_HAND) {
-                    meta_list.parse_args::<Ident>().map_or(None, |ident| {
-                        Self::visibility_from_path_str(&ident.to_string())
-                    })
-                } else {
-                    None
-                }
-            }
-        }
-    }
+    // /// Try to parse a [`Visibility`] option from a [`Meta`]
+    // #[inline]
+    // pub fn visibility_option(option: &Meta) -> Option<Self> {
+    //     match option {
+    //         Meta::Path(path) => Self::visibility_from_path(path),
+    //         Meta::NameValue(name_value) => Self::visibility_from_name_value(name_value),
+    //         // FIX ME
+    //         Meta::List(meta_list) => {
+    //             if meta_list.path.is_ident(Self::VISIBILITY_LEFT_HAND) {
+    //                 meta_list.parse_args::<Ident>().map_or(None, |ident| {
+    //                     Self::visibility_from_path_str(&ident.to_string())
+    //                 })
+    //             } else {
+    //                 None
+    //             }
+    //         }
+    //     }
+    // }
 
-    /// Try parse a [`Visibility`] from a [`Path`] as the modifier
-    #[inline]
-    fn visibility_from_path(path: &Path) -> Option<Self> {
-        path.get_ident()
-            .and_then(|ident| Self::visibility_from_path_str(&ident.to_string()))
-    }
+    // /// Try parse a [`Visibility`] from a [`Path`] as the modifier
+    // #[inline]
+    // fn visibility_from_path(path: &Path) -> Option<Self> {
+    //     path.get_ident()
+    //         .and_then(|ident| Self::visibility_from_path_str(&ident.to_string()))
+    // }
 
     /// Try parse a a [`Visibility`] from a `&str` as the modifier
     #[inline]
@@ -74,28 +75,52 @@ impl Visibility {
         None
     }
 
-    /// Try parse a a [`Visibility`] from a [`MetaNameValue`]
+    // /// Try parse a a [`Visibility`] from a [`MetaNameValue`]
+    // #[inline]
+    // fn visibility_from_name_value(name_value: &MetaNameValue) -> Option<Self> {
+    //     if name_value.path.is_ident(Self::VISIBILITY_LEFT_HAND) {
+    //         if let Expr::Lit(ExprLit {
+    //             lit: Lit::Str(ref lit_string),
+    //             ..
+    //         }) = &name_value.value
+    //         {
+    //             Self::visibility_from_path_str(&lit_string.value())
+    //         } else {
+    //             None
+    //         }
+    //     } else {
+    //         None
+    //     }
+    // }
+}
+
+impl AttributeOptionParseUtils for Visibility {
     #[inline]
-    fn visibility_from_name_value(name_value: &MetaNameValue) -> Option<Self> {
-        if name_value.path.is_ident(Self::VISIBILITY_LEFT_HAND) {
-            if let Expr::Lit(ExprLit {
-                lit: Lit::Str(ref lit_string),
-                ..
-            }) = &name_value.value
-            {
-                Self::visibility_from_path_str(&lit_string.value())
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+    fn parse_option_from_str(path: &str) -> Option<Self> {
+        Self::visibility_from_path_str(path)
+    }
+
+    #[inline]
+    fn parse_option_from_str_assignment(path: &str) -> Option<Self> {
+        Self::parse_option_from_str(path)
+    }
+
+    #[inline]
+    fn left_hand_path_accepted(path: &str) -> bool {
+        path == Self::VISIBILITY_LEFT_HAND
     }
 }
 
-impl AttributeOptionParse for Visibility {
-    #[inline]
-    fn parse_option(option: &Meta) -> Option<Self> {
-        Self::visibility_option(option)
+impl ToCode for Visibility {
+    fn to_code(&self, _: &Field) -> TokenStream2 {
+        match self {
+            Self::Private => TokenStream2::new(),
+            Self::Public => quote! {pub},
+            Self::Crate(opt_str) => {
+                let opt_str = opt_str.as_ref().map_or("crate", |s| s.as_str());
+
+                quote! {pub(#opt_str)}
+            }
+        }
     }
 }

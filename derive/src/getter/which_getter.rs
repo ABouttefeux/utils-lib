@@ -1,4 +1,8 @@
-use super::{ImmutableGetterOption, MutableGetterOption};
+use proc_macro2::TokenStream as TokenStream2;
+use quote::quote;
+use syn::Field;
+
+use super::{attribute_option::ToCode, ImmutableGetterOption, MutableGetterOption};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum WhichGetter {
@@ -44,6 +48,25 @@ impl WhichGetter {
             (Self::Immutable(_), Self::Immutable(i)) => Self::Immutable(i),
             // other is Self::Both
             (_, output @ Self::Both { .. }) => output,
+        }
+    }
+}
+
+impl ToCode for WhichGetter {
+    #[inline]
+    fn to_code(&self, field: &Field) -> TokenStream2 {
+        match self {
+            Self::Immutable(i) => i.to_code(field),
+            Self::Mutable(m) => m.to_code(field),
+            Self::Both { immutable, mutable } => {
+                let i_code = immutable.to_code(field);
+                let m_code = mutable.to_code(field);
+                quote! {
+                    #i_code
+
+                    #m_code
+                }
+            }
         }
     }
 }

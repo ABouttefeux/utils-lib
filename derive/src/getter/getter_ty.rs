@@ -1,10 +1,9 @@
 //! Module containing [`GetterTy`]
 
-use proc_macro2::{Ident, TokenStream as TokenStream2};
+use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{Expr, ExprLit, Lit, Meta, Path};
 
-use super::{attribute_option::AttributeOptionParseUtils, AttributeOptionParse};
+use super::attribute_option::AttributeOptionParseUtils;
 
 // TODO refactoring less code duplication
 

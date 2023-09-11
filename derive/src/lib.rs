@@ -133,7 +133,6 @@ mod sealed;
 mod test;
 
 use proc_macro::TokenStream;
-use proc_macro2::{TokenStream as TokenStream2, TokenTree as TokenTree2};
 
 //#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 
