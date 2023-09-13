@@ -1,12 +1,15 @@
 #![allow(clippy::module_name_repetitions)] // TODO
 
+use std::collections::HashSet;
+use std::hash::Hash;
+
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::Field;
 use syn::{punctuated::Punctuated, Attribute, Meta, Path, Token};
 
 use super::attribute_option::ToCode;
-use super::error::{AttributeOptionParseError, ImmutableAddConfigError, MutableAddConfigError};
+use super::error::{AddConfigError, AttributeOptionParseError, GetterParseError};
 use super::ident_option::IdentOption;
 use super::option_enum::{ImmutableGetterAttributeOption, MutableGetterAttributeOption};
 use super::{
@@ -78,17 +81,15 @@ impl GetterOption {
                     // FIXE ME
                     let list = meta_list
                         .parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)?;
-
-                    println!("list parsed");
                     if meta_list.path.is_ident(Self::IMMUTABLE) {
                         out = Some(add_option_config(
                             out,
-                            WhichGetter::Immutable(ImmutableGetterOption::parse(list)),
+                            WhichGetter::Immutable(ImmutableGetterOption::parse(list)?),
                         ));
                     } else if meta_list.path.is_ident(Self::MUTABLE) {
                         out = Some(add_option_config(
                             out,
-                            WhichGetter::Mutable(MutableGetterOption::parse(list)),
+                            WhichGetter::Mutable(MutableGetterOption::parse(list)?),
                         ));
                     }
                 }
@@ -130,6 +131,46 @@ impl ToCode for GetterOption {
 }
 //-------------------------
 
+//TODO move
+
+trait ParseGetterOption: Sized + Default {
+    type Option: Hash;
+
+    fn parse(
+        tokens: impl IntoIterator<Item = Meta>,
+    ) -> Result<Self, GetterParseError<ImmutableGetterAttributeOption>>; // TODO
+
+    fn add_config(
+        &mut self,
+        option: &Meta,
+    ) -> Result<ImmutableGetterAttributeOption, AddConfigError<ImmutableGetterAttributeOption>>;
+}
+
+// TODO trait
+
+macro_rules! fn_parse_getter_option {
+    ($tokens:ident) => {{
+        let mut set = HashSet::new();
+        let mut s = Self::default();
+        for meta in $tokens {
+            let res = s.add_config(&meta);
+            match res {
+                Ok(option) => {
+                    if !set.insert(option) {
+                        return Err(GetterParseError::AttributeOptionSetMultipleTimes(option));
+                    }
+                }
+                Err(AddConfigError::Acceptable(_)) => { //continue;
+                }
+                Err(AddConfigError::Unacceptable(err, option)) => {
+                    return Err(GetterParseError::AddConfigError(err, option))
+                }
+            }
+        }
+        Ok(s)
+    }};
+}
+
 // TODO validation
 /// Option for immutable getter
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
@@ -141,22 +182,11 @@ pub struct ImmutableGetterOption {
     self_ty: SelfTy,
 }
 
-/// macro for implementing the parse function for [`ImmutableGetterOption`] and [`MutableGetterOption`]
-macro_rules! fn_parse_getter_option {
-    ($tokens:ident) => {{
-        // parse function (tokens: impl IntoIterator<Item = Meta>) -> Self
-        let mut s = Self::default();
-        for meta in $tokens {
-            s.add_config(&meta);
-        }
-        s
-    }};
-}
-
 impl ImmutableGetterOption {
     #[inline]
-    #[must_use]
-    pub fn parse(tokens: impl IntoIterator<Item = Meta>) -> Self {
+    pub fn parse(
+        tokens: impl IntoIterator<Item = Meta>,
+    ) -> Result<Self, GetterParseError<ImmutableGetterAttributeOption>> {
         fn_parse_getter_option!(tokens)
     }
 
@@ -165,11 +195,12 @@ impl ImmutableGetterOption {
     fn add_config(
         &mut self,
         option: &Meta,
-    ) -> Result<ImmutableGetterAttributeOption, ImmutableAddConfigError> {
+    ) -> Result<ImmutableGetterAttributeOption, AddConfigError<ImmutableGetterAttributeOption>>
+    {
         match self.option.add_config(option) {
             Ok(option) => return Ok(option.into()),
-            Err(err @ MutableAddConfigError::Unacceptable(_, _)) => return Err(err.into()),
-            Err(MutableAddConfigError::Acceptable(_)) => {}
+            Err(err @ AddConfigError::Unacceptable(_, _)) => return Err(err.into()),
+            Err(AddConfigError::Acceptable(_)) => {}
         }
         match ConstTy::parse_option(option) {
             Ok(const_ty) => {
@@ -177,7 +208,7 @@ impl ImmutableGetterOption {
                 return Ok(ImmutableGetterAttributeOption::ConstTy);
             }
             Err(AttributeOptionParseError::Unacceptable(err)) => {
-                return Err(ImmutableAddConfigError::Unacceptable(
+                return Err(AddConfigError::Unacceptable(
                     err,
                     ImmutableGetterAttributeOption::ConstTy,
                 ));
@@ -190,7 +221,7 @@ impl ImmutableGetterOption {
                 return Ok(ImmutableGetterAttributeOption::GetterTy);
             }
             Err(AttributeOptionParseError::Unacceptable(err)) => {
-                return Err(ImmutableAddConfigError::Unacceptable(
+                return Err(AddConfigError::Unacceptable(
                     err,
                     ImmutableGetterAttributeOption::GetterTy,
                 ));
@@ -202,9 +233,10 @@ impl ImmutableGetterOption {
                 self.self_ty = self_ty;
                 Ok(ImmutableGetterAttributeOption::SelfTy)
             }
-            Err(AttributeOptionParseError::Unacceptable(err)) => Err(
-                ImmutableAddConfigError::Unacceptable(err, ImmutableGetterAttributeOption::SelfTy),
-            ),
+            Err(AttributeOptionParseError::Unacceptable(err)) => Err(AddConfigError::Unacceptable(
+                err,
+                ImmutableGetterAttributeOption::SelfTy,
+            )),
             Err(AttributeOptionParseError::Acceptable(err)) => Err(err.into()),
         }
     }
@@ -217,12 +249,23 @@ impl ToCode for ImmutableGetterOption {
         let fn_name = self.option.name().name(field).expect("no field name");
         let ty = &field.ty;
         let field_name = field.ident.as_ref().expect("no field name");
+        let const_ty = self.const_ty.to_code(field);
+        let getter_ty_prefix = self.ty.prefix_quote();
+        let getter_ty_suffix = self.ty.suffix_quote();
+        let self_ty_code = self.self_ty.to_code(field);
+
+        let comment = format!(
+            "Getter on a {} of the field `{field_name}` with type [`{}`].",
+            self.ty,
+            ty.to_token_stream()
+        );
 
         quote! {
+            #[doc=#comment]
             #[inline]
             #[must_use]
-            #visibility fn #fn_name(&mut self) -> &#ty {
-                &self.#field_name
+            #visibility #const_ty fn #fn_name(#self_ty_code self) -> #getter_ty_prefix #ty {
+                #getter_ty_prefix self.#field_name #getter_ty_suffix
             }
         }
     }
@@ -249,8 +292,9 @@ impl MutableGetterOption {
     }
 
     #[inline]
-    #[must_use]
-    pub fn parse(tokens: impl IntoIterator<Item = Meta>) -> Self {
+    pub fn parse(
+        tokens: impl IntoIterator<Item = Meta>,
+    ) -> Result<Self, GetterParseError<MutableGetterAttributeOption>> {
         fn_parse_getter_option!(tokens)
     }
 
@@ -259,14 +303,14 @@ impl MutableGetterOption {
     fn add_config(
         &mut self,
         option: &Meta,
-    ) -> Result<MutableGetterAttributeOption, MutableAddConfigError> {
+    ) -> Result<MutableGetterAttributeOption, AddConfigError<MutableGetterAttributeOption>> {
         match Visibility::parse_option(option) {
             Ok(vis) => {
                 self.visibility = vis;
                 return Ok(MutableGetterAttributeOption::Visibility);
             }
             Err(AttributeOptionParseError::Unacceptable(err)) => {
-                return Err(MutableAddConfigError::Unacceptable(
+                return Err(AddConfigError::Unacceptable(
                     err,
                     MutableGetterAttributeOption::Visibility,
                 ));
@@ -278,36 +322,13 @@ impl MutableGetterOption {
                 self.name = name;
                 Ok(MutableGetterAttributeOption::IdentOption)
             }
-            Err(AttributeOptionParseError::Unacceptable(err)) => Err(
-                MutableAddConfigError::Unacceptable(err, MutableGetterAttributeOption::IdentOption),
-            ),
+            Err(AttributeOptionParseError::Unacceptable(err)) => Err(AddConfigError::Unacceptable(
+                err,
+                MutableGetterAttributeOption::IdentOption,
+            )),
             Err(AttributeOptionParseError::Acceptable(err)) => Err(err.into()),
         }
     }
-
-    // /// Accepted values:
-    // /// - name = "..."
-    // /// - name(...) // TODO
-    // #[inline]
-    // #[must_use]
-    // fn name_option(option: &Meta) -> Option<Ident> {
-    //     match option {
-    //         Meta::NameValue(name_value) => {
-    //             if name_value.path.is_ident(Self::NAME_PATH) {
-    //                 if let Expr::Lit(ExprLit {
-    //                     lit: Lit::Str(ref lit_string),
-    //                     ..
-    //                 }) = &name_value.value
-    //                 {
-    //                     return Some(Ident::new(&lit_string.value(), Span::call_site()));
-    //                 }
-    //             }
-    //             None
-    //         }
-    //         Meta::List(meta_list) => todo!(),
-    //         Meta::Path(_) => None,
-    //     }
-    // }
 }
 
 impl ToCode for MutableGetterOption {
@@ -318,7 +339,13 @@ impl ToCode for MutableGetterOption {
         let ty = &field.ty;
         let field_name = field.ident.as_ref().expect("no field name");
 
+        let comment = format!(
+            "Getter on a mutable reference of the field {field_name} with type [`{}`].",
+            ty.to_token_stream()
+        );
+
         quote! {
+            #[doc=#comment]
             #[inline]
             #[must_use]
             #visibility fn #fn_name(&mut self) -> &mut #ty {

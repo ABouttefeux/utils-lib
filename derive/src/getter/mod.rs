@@ -6,6 +6,7 @@ mod ident_option;
 mod option;
 mod option_enum;
 mod self_ty;
+mod syntax;
 mod visibility;
 mod which_getter;
 
@@ -21,10 +22,12 @@ use self::option::{GetterOption, ImmutableGetterOption, MutableGetterOption};
 use self::visibility::Visibility;
 
 macro_rules! quote_compile_error {
-    ($msg:expr $(,)?) => {
-        quote! {compile_error!($msg)}.into()
+    ($($tt:tt)* ) => {
+        quote! {compile_error!($($tt)*)}.into()
     };
 }
+
+// TODO share option for both
 
 #[allow(clippy::module_name_repetitions)]
 #[inline]
@@ -53,8 +56,9 @@ pub fn derive_getter(item: TokenStream) -> TokenStream {
                     Ok(option) => Some(option.to_code(&field)),
                     Err(AttributeParseError::NotFound) => None,
                     Err(err) => {
-                        println!("error parsing option: {err}");
-                        None
+                        //println!("error parsing option: {err}");
+                        let message = format!("error parsing option: {err}");
+                        Some(quote_compile_error!(#message))
                     }
                 }
             })
@@ -68,20 +72,24 @@ pub fn derive_getter(item: TokenStream) -> TokenStream {
         }
     };
 
-    let name = input.ident;
-    let generics = input.generics;
+    let out = if vec.is_empty() {
+        quote! {}
+    } else {
+        let name = input.ident;
+        let generics = input.generics;
+        let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let out = quote! {
-        #[automatically_derived]
-        impl #impl_generics #name #ty_generics #where_clause {
-            #(#vec)*
+        quote! {
+            /// Automatically generated implementation for getters
+            #[automatically_derived]
+            impl #impl_generics #name #ty_generics #where_clause {
+                #(#vec)*
+            }
         }
-    }
-    .into();
+    };
 
-    println!("out:");
-    println!("{out}");
+    //println!("out:");
+    //println!("{out}");
 
-    out
+    out.into()
 }

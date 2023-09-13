@@ -148,6 +148,7 @@ pub fn derive_sealed(item: TokenStream) -> TokenStream {
     sealed::derive(item)
 }
 
+// TODO doc
 #[inline]
 #[must_use]
 #[proc_macro_derive(Getter, attributes(get, get_mut))]

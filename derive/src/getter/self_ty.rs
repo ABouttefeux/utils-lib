@@ -1,4 +1,8 @@
-use super::attribute_option::AttributeOptionParseUtils;
+use proc_macro2::TokenStream as TokenStream2;
+use quote::quote;
+use syn::Field;
+
+use super::attribute_option::{AttributeOptionParseUtils, ToCode};
 
 /// TODO
 ///
@@ -71,5 +75,15 @@ impl AttributeOptionParseUtils for SelfTy {
             || path == "Self"
             || path == "Self_ty"
             || path == "Self_type"
+    }
+}
+
+impl ToCode for SelfTy {
+    #[inline]
+    fn to_code(&self, _field: &Field) -> TokenStream2 {
+        match self {
+            Self::Ref => quote! {&},
+            Self::Value => quote! {},
+        }
     }
 }

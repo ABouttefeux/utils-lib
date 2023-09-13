@@ -96,6 +96,7 @@ pub trait AttributeOptionParseUtils: Sized {
                 .ok_or(UnacceptableParseError::LeftHandSideValuePathIsNotIdent)?
                 .to_string(),
         ) {
+            // FIXE ME
             Self::parse_from_ident_assignment(&meta_list.parse_args::<Ident>()?)
                 .ok_or_else(|| UnacceptableParseError::RightHandValueInvalid.into())
         } else {

@@ -12,24 +12,33 @@ impl IdentOption {
     /// Path string for the name option
     const NAME_PATH: &'static str = "name";
 
+    /// wrap a new [`Option::<Ident>`] into a new [`Self`]
     #[inline]
     #[must_use]
     const fn new(name: Option<Ident>) -> Self {
         Self { name }
     }
 
+    /// Get the getter function name as an [`Ident`]. see [`Self::name`]
     #[inline]
     #[must_use]
     fn ident<'a>(&'a self, field: &'a Field) -> Option<&'a Ident> {
         self.name.as_ref().or(field.ident.as_ref())
     }
 
+    // cspell: ignore identless
+    /// Get the getter function name as an [`Ident`].
+    ///
+    /// Return [`None`] if the field is identless and the name option is left unset.
     #[inline]
     #[must_use]
     pub fn name<'a>(&'a self, field: &'a Field) -> Option<&'a Ident> {
         self.ident(field)
     }
 
+    /// Get the mut getter function name as an [`Ident`].
+    ///
+    /// Return [`None`] if the field is identless and the name option is left unset.
     #[inline]
     #[must_use]
     pub fn name_mut(&self, field: &Field) -> Option<Ident> {

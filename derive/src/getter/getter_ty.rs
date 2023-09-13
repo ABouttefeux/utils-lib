@@ -1,5 +1,7 @@
 //! Module containing [`GetterTy`]
 
+use std::fmt::{self, Display};
+
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
@@ -16,7 +18,6 @@ use super::attribute_option::AttributeOptionParseUtils;
 /// - `by_ref`, `by_value`, `by_copy`, `by_clone`, `copy`, `clone`
 /// - `getter_ty = "..."`, `getter_type = "..."`
 /// - `getter_ty("...")`, `getter_type("...")`
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 pub enum GetterTy {
     /// to get the field by copy for example
@@ -158,5 +159,15 @@ impl AttributeOptionParseUtils for GetterTy {
     #[inline]
     fn left_hand_path_accepted(path: &str) -> bool {
         Self::left_hand_path_accepted_self(path)
+    }
+}
+
+impl Display for GetterTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Ref => write!(f, "reference"),
+            Self::Copy => write!(f, "copied value"),
+            Self::Clone => write!(f, "cloned value"),
+        }
     }
 }

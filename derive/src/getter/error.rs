@@ -1,9 +1,11 @@
 use std::{
     error::Error,
-    fmt::{self, Display},
+    fmt::{self, Debug, Display},
 };
 
-use super::option_enum::{ImmutableGetterAttributeOption, MutableGetterAttributeOption};
+use super::option_enum::{
+    GetterAttributeOption, ImmutableGetterAttributeOption, MutableGetterAttributeOption,
+};
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
@@ -15,6 +17,9 @@ pub enum AttributeParseError {
     NotFound,
     /// Parse error form syn
     ExprParseError(syn::Error),
+    /// Error while parsing option for getter in the filed attribute
+    // TODO Name
+    GetterParseError(GetterParseError<ImmutableGetterAttributeOption>),
 }
 
 impl From<syn::Error> for AttributeParseError {
@@ -24,13 +29,24 @@ impl From<syn::Error> for AttributeParseError {
     }
 }
 
+impl<T> From<T> for AttributeParseError
+where
+    T: Into<GetterParseError<ImmutableGetterAttributeOption>>,
+{
+    #[inline]
+    fn from(value: T) -> Self {
+        Self::GetterParseError(value.into())
+    }
+}
+
 impl Display for AttributeParseError {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self{
             Self::NameValue => write!(f, "field attribute is not supported in name value mode. Please refer to the documentation"),
             Self::NotFound => write!(f, "attribute #[get] or #[get_mut] not found"),
-            Self::ExprParseError(err) => write!(f, "{err}"),
+            Self::ExprParseError(ref err) => write!(f, "{err}"),
+            Self::GetterParseError(ref err) => write!(f, "{err}")
         }
     }
 }
@@ -40,7 +56,8 @@ impl Error for AttributeParseError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::NameValue | Self::NotFound => None,
-            Self::ExprParseError(err) => Some(err),
+            Self::ExprParseError(ref err) => Some(err),
+            Self::GetterParseError(ref err) => Some(err),
         }
     }
 }
@@ -184,41 +201,97 @@ impl Error for AttributeOptionParseError {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum MutableAddConfigError {
+pub enum AddConfigError<T: GetterAttributeOption> {
     Acceptable(AcceptableParseError),
-    Unacceptable(UnacceptableParseError, MutableGetterAttributeOption),
+    Unacceptable(UnacceptableParseError, T),
 }
 
-impl From<AcceptableParseError> for MutableAddConfigError {
+impl From<AddConfigError<MutableGetterAttributeOption>>
+    for AddConfigError<ImmutableGetterAttributeOption>
+{
+    #[inline]
+    fn from(value: AddConfigError<MutableGetterAttributeOption>) -> Self {
+        match value {
+            AddConfigError::Acceptable(err) => Self::Acceptable(err),
+            AddConfigError::Unacceptable(err, option) => Self::Unacceptable(err, option.into()),
+        }
+    }
+}
+
+impl<T: GetterAttributeOption> From<AcceptableParseError> for AddConfigError<T> {
     #[inline]
     fn from(value: AcceptableParseError) -> Self {
         Self::Acceptable(value)
+    }
+}
+
+impl<T: GetterAttributeOption + Display> Display for AddConfigError<T> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Acceptable(ref err) => write!(f, "{err}"),
+            Self::Unacceptable(ref err, ref option) => {
+                write!(f, "got error {err} while parsing option {option}")
+            }
+        }
+    }
+}
+
+impl<T: GetterAttributeOption + Debug + Display> Error for AddConfigError<T> {
+    #[inline]
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Acceptable(ref err) => Some(err),
+            Self::Unacceptable(ref err, _) => Some(err),
+        }
     }
 }
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum ImmutableAddConfigError {
-    Acceptable(AcceptableParseError),
-    Unacceptable(UnacceptableParseError, ImmutableGetterAttributeOption),
+pub enum GetterParseError<T: GetterAttributeOption> {
+    AddConfigError(UnacceptableParseError, T),
+    /// This attribute option is set multiple time we only accept it once
+    AttributeOptionSetMultipleTimes(T),
 }
 
-impl From<MutableAddConfigError> for ImmutableAddConfigError {
+impl<T: GetterAttributeOption + Display> Display for GetterParseError<T> {
     #[inline]
-    fn from(value: MutableAddConfigError) -> Self {
-        match value {
-            MutableAddConfigError::Acceptable(err) => Self::Acceptable(err),
-            MutableAddConfigError::Unacceptable(err, option) => {
-                Self::Unacceptable(err, option.into())
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AttributeOptionSetMultipleTimes(ref option) => {
+                write!(f, "{option} is set multiple times")
+            }
+            Self::AddConfigError(ref err, ref option) => {
+                write!(f, "got error {err} while parsing option {option}")
             }
         }
     }
 }
 
-impl From<AcceptableParseError> for ImmutableAddConfigError {
+impl<T: GetterAttributeOption + Display + Debug> Error for GetterParseError<T> {
     #[inline]
-    fn from(value: AcceptableParseError) -> Self {
-        Self::Acceptable(value)
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::AttributeOptionSetMultipleTimes(_) => None,
+            Self::AddConfigError(ref err, _) => Some(err),
+        }
+    }
+}
+
+impl From<GetterParseError<MutableGetterAttributeOption>>
+    for GetterParseError<ImmutableGetterAttributeOption>
+{
+    #[inline]
+    fn from(value: GetterParseError<MutableGetterAttributeOption>) -> Self {
+        match value {
+            GetterParseError::AttributeOptionSetMultipleTimes(opt) => {
+                Self::AttributeOptionSetMultipleTimes(opt.into())
+            }
+            GetterParseError::AddConfigError(err, option) => {
+                Self::AddConfigError(err, option.into())
+            }
+        }
     }
 }

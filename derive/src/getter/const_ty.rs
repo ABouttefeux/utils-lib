@@ -1,10 +1,11 @@
 use std::fmt::{self, Display};
 
+use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{Expr, ExprLit, Lit, MetaNameValue};
+use syn::{Expr, ExprLit, Field, Lit, MetaNameValue};
 
 use super::{
-    attribute_option::AttributeOptionParseUtils,
+    attribute_option::{AttributeOptionParseUtils, ToCode},
     error::{AcceptableParseError, AttributeOptionParseError, UnacceptableParseError},
 };
 
@@ -38,7 +39,7 @@ impl ConstTy {
 impl AttributeOptionParseUtils for ConstTy {
     #[inline]
     fn parse_option_from_str(path: &str) -> Option<Self> {
-        (path == "const").then_some(Self::Constant)
+        Self::left_hand_path_accepted(path).then_some(Self::Constant)
     }
 
     #[inline]
@@ -83,7 +84,14 @@ impl AttributeOptionParseUtils for ConstTy {
 
     #[inline]
     fn left_hand_path_accepted(path: &str) -> bool {
-        path == "const"
+        path == "const" || path == "constant" || path == "Constant"
+    }
+}
+
+impl ToCode for ConstTy {
+    #[inline]
+    fn to_code(&self, _field: &Field) -> TokenStream2 {
+        self.quote()
     }
 }
 
