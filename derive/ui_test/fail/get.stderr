@@ -1,0 +1,15 @@
+error: The trait getter cannot be derive on fieldless struct
+ --> ui_test/fail/get.rs:3:10
+  |
+3 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: proc-macro derive panicked
+ --> ui_test/fail/get.rs:6:10
+  |
+6 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = help: message: no field name

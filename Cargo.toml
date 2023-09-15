@@ -21,7 +21,7 @@ members = ["derive", "macro-utils"]
 [dependencies]
 num-traits = "0.2.16"
 serde = { version = "1.0", features = ["derive"], optional = true }
-
+utils-lib-derive = { path = "derive" }
 
 [dev-dependencies]
 version-sync = "0.9.4"

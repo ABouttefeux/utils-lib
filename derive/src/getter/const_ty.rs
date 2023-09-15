@@ -1,3 +1,5 @@
+//! Contains [`ConstTy`]
+
 use std::fmt::{self, Display};
 
 use proc_macro2::TokenStream as TokenStream2;
@@ -5,8 +7,8 @@ use quote::quote;
 use syn::{Expr, ExprLit, Field, Lit, MetaNameValue};
 
 use super::{
-    attribute_option::{AttributeOptionParseUtils, ToCode},
-    error::{AcceptableParseError, AttributeOptionParseError, UnacceptableParseError},
+    attribute_option::{FieldAttributeOptionParseUtils, ToCode},
+    error::{AcceptableParseError, FieldAttributeOptionParseError, UnacceptableParseError},
 };
 
 /// Option to determine if a getter should be constant or not.
@@ -36,7 +38,7 @@ impl ConstTy {
     }
 }
 
-impl AttributeOptionParseUtils for ConstTy {
+impl FieldAttributeOptionParseUtils for ConstTy {
     #[inline]
     fn parse_option_from_str(path: &str) -> Option<Self> {
         Self::left_hand_path_accepted(path).then_some(Self::Constant)
@@ -56,7 +58,9 @@ impl AttributeOptionParseUtils for ConstTy {
     }
 
     #[inline]
-    fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, AttributeOptionParseError> {
+    fn parse_name_value(
+        name_value: &MetaNameValue,
+    ) -> Result<Self, FieldAttributeOptionParseError> {
         if Self::left_hand_path_accepted(
             &name_value
                 .path

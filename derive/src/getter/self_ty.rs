@@ -1,8 +1,10 @@
+//! Contains [`SelfTy`]
+
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::Field;
 
-use super::attribute_option::{AttributeOptionParseUtils, ToCode};
+use super::attribute_option::{FieldAttributeOptionParseUtils, ToCode};
 
 /// TODO
 ///
@@ -45,7 +47,7 @@ pub enum SelfTy {
     Value,
 }
 
-impl AttributeOptionParseUtils for SelfTy {
+impl FieldAttributeOptionParseUtils for SelfTy {
     fn parse_option_from_str(path: &str) -> Option<Self> {
         if path == "self" {
             Some(Self::Value)

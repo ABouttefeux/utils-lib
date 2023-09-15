@@ -5,7 +5,7 @@ use std::fmt::{self, Display};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
-use super::attribute_option::AttributeOptionParseUtils;
+use super::attribute_option::FieldAttributeOptionParseUtils;
 
 // TODO refactoring less code duplication
 
@@ -66,6 +66,7 @@ pub enum GetterTy {
 }
 
 impl GetterTy {
+    /// Get the quote for start of the function implementation
     #[must_use]
     #[inline]
     pub fn prefix_quote(self) -> TokenStream2 {
@@ -75,6 +76,7 @@ impl GetterTy {
         }
     }
 
+    /// Get the quote for end of the function implementation
     #[must_use]
     #[inline]
     pub fn suffix_quote(self) -> TokenStream2 {
@@ -84,13 +86,7 @@ impl GetterTy {
         }
     }
 
-    // #[must_use]
-    // #[inline]
-    // fn parse_path(path: &Path) -> Option<Self> {
-    //     path.get_ident()
-    //         .and_then(|ident| Self::parse_string(&ident.to_string()))
-    // }
-
+    /// Parse the option from a string
     #[must_use]
     #[inline]
     fn parse_string(path: &str) -> Option<Self> {
@@ -102,6 +98,7 @@ impl GetterTy {
         }
     }
 
+    /// Get the left hand value accepted in the parsing of the option
     #[must_use]
     #[inline]
     fn left_hand_path_accepted_self(path: &str) -> bool {
@@ -145,7 +142,7 @@ impl GetterTy {
 //     }
 // }
 
-impl AttributeOptionParseUtils for GetterTy {
+impl FieldAttributeOptionParseUtils for GetterTy {
     #[inline]
     fn parse_option_from_str(path: &str) -> Option<Self> {
         Self::parse_string(path)

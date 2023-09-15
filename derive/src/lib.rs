@@ -121,7 +121,7 @@
 
 //
 //---------------
-//#![warn(clippy::missing_docs_in_private_items)] // doc
+#![warn(clippy::missing_docs_in_private_items)] // doc
 #![warn(missing_docs)] // doc
 
 //--
@@ -148,12 +148,95 @@ pub fn derive_sealed(item: TokenStream) -> TokenStream {
     sealed::derive(item)
 }
 
+/// Creates a trait `Sealed` into a private module `private`.
+#[inline]
+#[must_use]
+#[proc_macro]
+pub fn trait_sealed(item: TokenStream) -> TokenStream {
+    sealed::trait_sealed(item)
+}
+
 // TODO doc
+/// Derive getter macro
+///
+/// valid field attribute:
+/// - `#[get]` for immutable getter
+/// - `#[get_mut]` for mutable getter
+///
+/// Valid option for mutable getter :
+/// - Name
+/// - Visibility
+///
+/// Valid option for immutable getter :
+/// - Name
+/// - Visibility
+/// - Constant type
+/// - Getter type
+/// - Self Type
+///
+/// ## Name
+///
+/// determine the name og the getter. By default it is the name of the field for
+/// immutable getter and `{name}_mut` for mutable getter. It can be rename using
+/// the option `name = "{name}"` or `name({name})` with `{name}` the name of the getter.
+///
+/// ### Example
+/// ```
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Getter)]
+/// struct S {
+///     #[get(name = "field")]
+///     #[get_mut(name(mut_getter))]
+///     f: usize,
+/// }
+///
+/// let mut s = S { f: 0 };
+/// assert_eq!(s.field(), &0);
+/// assert_eq!(s.mut_getter(), &0);
+/// ```
+///
+/// ## Visibility
+///
+/// by default getter are private. It is possible to change the visibility
+/// of the getter using the following syntax
+///  accepted option :
+/// - value:
+///   - pub (wip)
+///   - public
+///   - crate (wip)
+///   - pub(...) (wip)
+///   - private
+/// - Visibility = "{value}" with {value} a previously define value
+/// - Visibility({value})
+///
+/// ### Example
+///
+/// ```
+/// mod private {
+///     use utils_lib_derive::Getter;
+///
+///     #[derive(Getter)]
+///     pub struct S {
+///         #[get(public)]
+///         pub f: usize,
+///     }
+/// }
+///
+/// let mut s = private::S { f: 0 };
+/// assert_eq!(s.f(), &0);
+/// ```
+///
+/// ## Constant type
+///
+/// ## Getter type
+///
+/// ## Self Type
 #[inline]
 #[must_use]
 #[proc_macro_derive(Getter, attributes(get, get_mut))]
 pub fn derive_getter(item: TokenStream) -> TokenStream {
-    getter::derive_getter(item)
+    getter::derive(item)
 }
 
 // #[proc_macro_derive(Getter, attributes(get))]

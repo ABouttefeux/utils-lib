@@ -1,15 +1,23 @@
+//! Contains [`WhichGetter`]
+
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::Field;
 
 use super::{attribute_option::ToCode, ImmutableGetterOption, MutableGetterOption};
 
+/// Determine which getter type is being implemented.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum WhichGetter {
+    /// Immutable getter.
     Immutable(ImmutableGetterOption),
+    /// Mutable getter.
     Mutable(MutableGetterOption),
+    /// Both the mutable getter and immutable getter.
     Both {
+        /// immut getter
         immutable: ImmutableGetterOption,
+        /// mut getter
         mutable: MutableGetterOption,
     },
 }

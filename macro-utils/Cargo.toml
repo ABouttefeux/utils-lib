@@ -17,7 +17,3 @@ proc-macro2 = "1.0"
 
 [dev-dependencies]
 version-sync = "0.9.4"
-
-
-[profile.release]
-lto = true

@@ -4,6 +4,7 @@ mod private {
 
 use utils_lib_derive::Sealed;
 
+
 #[derive(Sealed)]
 struct ZST;
 

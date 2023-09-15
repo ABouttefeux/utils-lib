@@ -1,3 +1,5 @@
+//! Contain proc macro for `Getter` derive
+
 mod attribute_option;
 mod const_ty;
 mod error;
@@ -15,24 +17,25 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
-pub use self::attribute_option::AttributeOptionParse;
+pub use self::attribute_option::FieldAttributeOptionParse;
 use self::attribute_option::ToCode;
 pub use self::error::AttributeParseError;
 use self::option::{GetterOption, ImmutableGetterOption, MutableGetterOption};
 use self::visibility::Visibility;
 
+/// Creates a quote with compile error with the given message
 macro_rules! quote_compile_error {
     ($($tt:tt)* ) => {
-        quote! {compile_error!($($tt)*)}.into()
+        quote! {compile_error!($($tt)*);}.into()
     };
 }
 
 // TODO share option for both
 
-#[allow(clippy::module_name_repetitions)]
+/// Derive getter macro. see [`crate::derive_getter`]
 #[inline]
 #[must_use]
-pub fn derive_getter(item: TokenStream) -> TokenStream {
+pub fn derive(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
 
     let vec: Vec<TokenStream2> = match input.data {
@@ -73,7 +76,7 @@ pub fn derive_getter(item: TokenStream) -> TokenStream {
     };
 
     let out = if vec.is_empty() {
-        quote! {}
+        quote_compile_error!("no field has attribute #[get] or #[get_mut]")
     } else {
         let name = input.ident;
         let generics = input.generics;

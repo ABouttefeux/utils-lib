@@ -1,20 +1,27 @@
+//! Contains the enums for the list of options [`MutableOptionList`] and [`ImmutableOptionList`]
+//! and the trait [`OptionList`]
+
 use std::{
     fmt::{self, Display},
     hash::Hash,
 };
 
-pub trait GetterAttributeOption: Hash {}
+/// Trait for common code for listing option:
+/// [`MutableOptionList`] and [`ImmutableOptionList`].
+pub trait OptionList {}
 
-//TODO name
+/// List option for [`MutableGetterOption`]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
-pub enum MutableGetterAttributeOption {
+pub enum MutableOptionList {
+    /// Visibility
     Visibility,
+    /// name
     IdentOption,
 }
 
-impl GetterAttributeOption for MutableGetterAttributeOption {}
+impl OptionList for MutableOptionList {}
 
-impl Display for MutableGetterAttributeOption {
+impl Display for MutableOptionList {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -24,32 +31,38 @@ impl Display for MutableGetterAttributeOption {
     }
 }
 
-//TODO name
+/// List option for [`ImmutableGetterOption`]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
-pub enum ImmutableGetterAttributeOption {
-    MutableOption(MutableGetterAttributeOption),
+pub enum ImmutableOptionList {
+    /// Common option with mut getter:
+    /// - name
+    /// - visibility
+    MutableOption(MutableOptionList),
+    /// if the function is constant or not
     ConstTy,
+    /// if the getter is by ref, value or clone
     GetterTy,
+    /// if the self value is by ref or moved
     SelfTy,
 }
 
-impl GetterAttributeOption for ImmutableGetterAttributeOption {}
+impl OptionList for ImmutableOptionList {}
 
-impl Display for ImmutableGetterAttributeOption {
+impl Display for ImmutableOptionList {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::MutableOption(option) => write!(f, "{option}"),
             Self::ConstTy => write!(f, "const"),
             Self::GetterTy => write!(f, "getter type"),
-            Self::SelfTy => write!(f, "self"),
+            Self::SelfTy => write!(f, "self type"),
         }
     }
 }
 
-impl From<MutableGetterAttributeOption> for ImmutableGetterAttributeOption {
+impl From<MutableOptionList> for ImmutableOptionList {
     #[inline]
-    fn from(value: MutableGetterAttributeOption) -> Self {
+    fn from(value: MutableOptionList) -> Self {
         Self::MutableOption(value)
     }
 }

@@ -20,7 +20,3 @@ macro-utils = { path = "../macro-utils" }
 [dev-dependencies]
 version-sync = "0.9.4"
 trybuild = "1.0"
-
-
-[profile.release]
-lto = true

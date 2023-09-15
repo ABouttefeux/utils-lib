@@ -1,10 +1,14 @@
+//! Contains [`IdentOption`]
+
 use proc_macro2::{Ident, Span};
 use syn::Field;
 
-use super::attribute_option::AttributeOptionParseUtils;
+use super::attribute_option::FieldAttributeOptionParseUtils;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
+/// optional name of the getter
 pub struct IdentOption {
+    /// Wrapped ident value
     name: Option<Ident>,
 }
 
@@ -51,7 +55,7 @@ impl IdentOption {
     }
 }
 
-impl AttributeOptionParseUtils for IdentOption {
+impl FieldAttributeOptionParseUtils for IdentOption {
     #[inline]
     fn parse_option_from_str(_path: &str) -> Option<Self> {
         None
