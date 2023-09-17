@@ -5,16 +5,17 @@ use std::hash::Hash;
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
-use syn::Field;
+use syn::Index;
 use syn::{punctuated::Punctuated, Attribute, Meta, Path, Token};
 
 use super::attribute_option::ToCode;
-use super::error::{AddConfigError, FieldAttributeOptionParseError, GetterParseError};
+use super::error::{AddConfigError, GetterParseError, ParseOptionError};
+use super::field::Field;
 use super::ident_option::IdentOption;
 use super::option_enum::{ImmutableOptionList, MutableOptionList, OptionList};
 use super::{
     const_ty::ConstTy, getter_ty::GetterTy, self_ty::SelfTy, which_getter::WhichGetter,
-    AttributeParseError, FieldAttributeOptionParse, Visibility,
+    AttributeParseError, ParseOption, Visibility,
 };
 
 /// [`WhichGetter`] wrapper
@@ -201,36 +202,37 @@ impl ParseGetterOption for ImmutableGetterOption {
                 self.const_ty = const_ty;
                 return Ok(ImmutableOptionList::ConstTy);
             }
-            Err(FieldAttributeOptionParseError::Unacceptable(err)) => {
+            Err(ParseOptionError::Unacceptable(err)) => {
                 return Err(AddConfigError::Unacceptable(
                     err,
                     ImmutableOptionList::ConstTy,
                 ));
             }
-            Err(FieldAttributeOptionParseError::Acceptable(_)) => {}
+            Err(ParseOptionError::Acceptable(_)) => {}
         }
         match GetterTy::parse_option(option) {
             Ok(ty) => {
                 self.ty = ty;
                 return Ok(ImmutableOptionList::GetterTy);
             }
-            Err(FieldAttributeOptionParseError::Unacceptable(err)) => {
+            Err(ParseOptionError::Unacceptable(err)) => {
                 return Err(AddConfigError::Unacceptable(
                     err,
                     ImmutableOptionList::GetterTy,
                 ));
             }
-            Err(FieldAttributeOptionParseError::Acceptable(_)) => {}
+            Err(ParseOptionError::Acceptable(_)) => {}
         }
         match SelfTy::parse_option(option) {
             Ok(self_ty) => {
                 self.self_ty = self_ty;
                 Ok(ImmutableOptionList::SelfTy)
             }
-            Err(FieldAttributeOptionParseError::Unacceptable(err)) => Err(
-                AddConfigError::Unacceptable(err, ImmutableOptionList::SelfTy),
-            ),
-            Err(FieldAttributeOptionParseError::Acceptable(err)) => Err(err.into()),
+            Err(ParseOptionError::Unacceptable(err)) => Err(AddConfigError::Unacceptable(
+                err,
+                ImmutableOptionList::SelfTy,
+            )),
+            Err(ParseOptionError::Acceptable(err)) => Err(err.into()),
         }
     }
 }
@@ -238,14 +240,23 @@ impl ParseGetterOption for ImmutableGetterOption {
 impl ToCode for ImmutableGetterOption {
     #[inline]
     fn to_code(&self, field: &Field) -> TokenStream2 {
-        let visibility = self.option.visibility().to_code(field);
-        let fn_name = self.option.name().name(field).expect("no field name");
-        let ty = &field.ty;
-        let field_name = field.ident.as_ref().expect("no field name");
-        let const_ty = self.const_ty.to_code(field);
+        let visibility = self.option.visibility();
+        // TODO improve
+        let fn_name = self
+            .option
+            .name()
+            .name(field.field())
+            .expect("no field name");
+        let ty = &field.field().ty;
+        let field_name = field.field().ident.as_ref().map_or_else(
+            || Index::from(field.index()).into_token_stream(),
+            ToTokens::to_token_stream,
+        );
+
+        let const_ty = self.const_ty;
         let getter_ty_prefix = self.ty.prefix_quote();
         let getter_ty_suffix = self.ty.suffix_quote();
-        let self_ty_code = self.self_ty.to_code(field);
+        let self_ty_code = self.self_ty;
 
         let comment = format!(
             "Getter on a {} of the field `{field_name}` with type [`{}`].",
@@ -300,23 +311,24 @@ impl ParseGetterOption for MutableGetterOption {
                 self.visibility = vis;
                 return Ok(MutableOptionList::Visibility);
             }
-            Err(FieldAttributeOptionParseError::Unacceptable(err)) => {
+            Err(ParseOptionError::Unacceptable(err)) => {
                 return Err(AddConfigError::Unacceptable(
                     err,
                     MutableOptionList::Visibility,
                 ));
             }
-            Err(FieldAttributeOptionParseError::Acceptable(_)) => {}
+            Err(ParseOptionError::Acceptable(_)) => {}
         }
         match IdentOption::parse_option(option) {
             Ok(name) => {
                 self.name = name;
                 Ok(MutableOptionList::IdentOption)
             }
-            Err(FieldAttributeOptionParseError::Unacceptable(err)) => Err(
-                AddConfigError::Unacceptable(err, MutableOptionList::IdentOption),
-            ),
-            Err(FieldAttributeOptionParseError::Acceptable(err)) => Err(err.into()),
+            Err(ParseOptionError::Unacceptable(err)) => Err(AddConfigError::Unacceptable(
+                err,
+                MutableOptionList::IdentOption,
+            )),
+            Err(ParseOptionError::Acceptable(err)) => Err(err.into()),
         }
     }
 }
@@ -324,10 +336,14 @@ impl ParseGetterOption for MutableGetterOption {
 impl ToCode for MutableGetterOption {
     #[inline]
     fn to_code(&self, field: &Field) -> TokenStream2 {
-        let visibility = self.visibility().to_code(field);
-        let fn_name = self.name().name_mut(field).expect("no field name");
-        let ty = &field.ty;
-        let field_name = field.ident.as_ref().expect("no field name");
+        let visibility = self.visibility();
+        // TODO improve
+        let fn_name = self.name().name_mut(field.field()).expect("no field name");
+        let ty = &field.field().ty;
+        let field_name = field.field().ident.as_ref().map_or_else(
+            || Index::from(field.index()).into_token_stream(),
+            ToTokens::to_token_stream,
+        );
 
         let comment = format!(
             "Getter on a mutable reference of the field {field_name} with type [`{}`].",

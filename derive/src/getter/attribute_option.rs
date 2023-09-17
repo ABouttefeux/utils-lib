@@ -1,7 +1,10 @@
 use proc_macro2::{Ident, TokenStream as TokenStream2};
-use syn::{Expr, ExprLit, Field, Lit, Meta, MetaList, MetaNameValue, Path};
+use syn::{Expr, ExprLit, Lit, Meta, MetaList, MetaNameValue, Path};
 
-use super::error::{AcceptableParseError, FieldAttributeOptionParseError, UnacceptableParseError};
+use super::{
+    error::{AcceptableParseError, ParseOptionError, UnacceptableParseError},
+    field::Field,
+};
 
 // TODO name
 // TODO code to avoid duplication for parsing option
@@ -9,17 +12,17 @@ use super::error::{AcceptableParseError, FieldAttributeOptionParseError, Unaccep
 
 /// trait for option element that are parsed from [`Meta`]
 #[allow(clippy::module_name_repetitions)] // TODO
-pub trait FieldAttributeOptionParse: Sized {
+pub trait ParseOption: Sized {
     /// try to parse the option element from a [`Meta`] return [`Ok`] if the element is valid.
     ///
     /// TODO error doc
-    fn parse_option(option: &Meta) -> Result<Self, FieldAttributeOptionParseError>;
+    fn parse_option(option: &Meta) -> Result<Self, ParseOptionError>;
 }
 
 /// trait for option element that are parsed from [`Meta`] providing default structure
 /// to implement [`AttributeOptionParse`] more easily
 #[allow(clippy::module_name_repetitions)] // TODO
-pub trait FieldAttributeOptionParseUtils: Sized {
+pub trait ParseOptionUtils: Sized {
     /// Try parse the option from a string
     #[must_use]
     fn parse_option_from_str(path: &str) -> Option<Self>;
@@ -57,7 +60,7 @@ pub trait FieldAttributeOptionParseUtils: Sized {
     /// try to parse the option element from a [`Meta`] return [`Some`] if the element is valid
     /// [`None`] otherwise
     #[inline]
-    fn parse_option_utils(option: &Meta) -> Result<Self, FieldAttributeOptionParseError> {
+    fn parse_option_utils(option: &Meta) -> Result<Self, ParseOptionError> {
         match option {
             Meta::Path(path) => Self::parse_from_path(path)
                 .ok_or_else(|| AcceptableParseError::PathNotRecognized.into()),
@@ -68,9 +71,7 @@ pub trait FieldAttributeOptionParseUtils: Sized {
 
     /// try parse the rule from a [`MetaNameValue`]
     #[inline]
-    fn parse_name_value(
-        name_value: &MetaNameValue,
-    ) -> Result<Self, FieldAttributeOptionParseError> {
+    fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, ParseOptionError> {
         if Self::left_hand_path_accepted(
             &name_value
                 .path
@@ -89,7 +90,7 @@ pub trait FieldAttributeOptionParseUtils: Sized {
 
     /// try parse the rule from a [`MetaList`]
     #[inline]
-    fn parse_meta_list(meta_list: &MetaList) -> Result<Self, FieldAttributeOptionParseError> {
+    fn parse_meta_list(meta_list: &MetaList) -> Result<Self, ParseOptionError> {
         if Self::left_hand_path_accepted(
             &meta_list
                 .path
@@ -125,13 +126,14 @@ fn get_string_literal(expr: &Expr) -> Option<String> {
 }
 
 /// Auto implementation from [`FieldAttributeOptionParseUtils`] to an [`FieldAttributeOptionParse`]
-impl<T: FieldAttributeOptionParseUtils> FieldAttributeOptionParse for T {
+impl<T: ParseOptionUtils> ParseOption for T {
     #[inline]
-    fn parse_option(option: &Meta) -> Result<Self, FieldAttributeOptionParseError> {
+    fn parse_option(option: &Meta) -> Result<Self, ParseOptionError> {
         Self::parse_option_utils(option)
     }
 }
 
+// TODO review
 /// Trait to convert an option to actual implementation code
 pub trait ToCode {
     /// get the code with the [`Field`] information

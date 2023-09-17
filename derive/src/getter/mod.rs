@@ -3,6 +3,7 @@
 mod attribute_option;
 mod const_ty;
 mod error;
+mod field;
 mod getter_ty;
 mod ident_option;
 mod option;
@@ -17,9 +18,10 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
-pub use self::attribute_option::FieldAttributeOptionParse;
+pub use self::attribute_option::ParseOption;
 use self::attribute_option::ToCode;
 pub use self::error::AttributeParseError;
+use self::field::Field;
 use self::option::{GetterOption, ImmutableGetterOption, MutableGetterOption};
 use self::visibility::Visibility;
 
@@ -52,20 +54,21 @@ pub fn derive(item: TokenStream) -> TokenStream {
                 }
             };
 
-            iter.filter_map(|field| {
-                let option = GetterOption::parse(&field.attrs);
+            iter.enumerate()
+                .filter_map(|(field_index, field)| {
+                    let option = GetterOption::parse(&field.attrs);
 
-                match option {
-                    Ok(option) => Some(option.to_code(&field)),
-                    Err(AttributeParseError::NotFound) => None,
-                    Err(err) => {
-                        //println!("error parsing option: {err}");
-                        let message = format!("error parsing option: {err}");
-                        Some(quote_compile_error!(#message))
+                    match option {
+                        Ok(option) => Some(option.to_code(&Field::new(field, field_index))),
+                        Err(AttributeParseError::NotFound) => None,
+                        Err(err) => {
+                            //println!("error parsing option: {err}");
+                            let message = format!("error parsing option: {err}");
+                            Some(quote_compile_error!(#message))
+                        }
                     }
-                }
-            })
-            .collect::<Vec<TokenStream2>>()
+                })
+                .collect::<Vec<TokenStream2>>()
         }
         Data::Enum(_) => {
             return quote_compile_error!("cannot derive getter for enums yet");

@@ -1,10 +1,9 @@
 //! Contains [`Visibility`]
 
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::Field;
+use quote::{quote, ToTokens};
 
-use super::attribute_option::{FieldAttributeOptionParseUtils, ToCode};
+use super::attribute_option::ParseOptionUtils;
 
 /// Visibility option
 ///
@@ -96,7 +95,23 @@ impl Visibility {
     // }
 }
 
-impl FieldAttributeOptionParseUtils for Visibility {
+impl Visibility {
+    /// create a token a quote of the visibility
+    fn quote(&self) -> TokenStream2 {
+        match self {
+            Self::Private => TokenStream2::new(),
+            Self::Public => quote! {pub},
+            Self::Crate(opt_str) => {
+                // TODO fix
+                let opt_str = opt_str.as_ref().map_or("crate", |s| s.as_str());
+
+                quote! {pub(#opt_str)}
+            }
+        }
+    }
+}
+
+impl ParseOptionUtils for Visibility {
     #[inline]
     fn parse_option_from_str(path: &str) -> Option<Self> {
         Self::visibility_from_path_str(path)
@@ -113,18 +128,8 @@ impl FieldAttributeOptionParseUtils for Visibility {
     }
 }
 
-impl ToCode for Visibility {
-    #[inline]
-    fn to_code(&self, _: &Field) -> TokenStream2 {
-        match self {
-            Self::Private => TokenStream2::new(),
-            Self::Public => quote! {pub},
-            Self::Crate(opt_str) => {
-                // TODO fix
-                let opt_str = opt_str.as_ref().map_or("crate", |s| s.as_str());
-
-                quote! {pub(#opt_str)}
-            }
-        }
+impl ToTokens for Visibility {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        tokens.extend(self.quote());
     }
 }

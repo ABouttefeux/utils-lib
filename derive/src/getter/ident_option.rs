@@ -3,7 +3,7 @@
 use proc_macro2::{Ident, Span};
 use syn::Field;
 
-use super::attribute_option::FieldAttributeOptionParseUtils;
+use super::attribute_option::ParseOptionUtils;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 /// optional name of the getter
@@ -55,7 +55,7 @@ impl IdentOption {
     }
 }
 
-impl FieldAttributeOptionParseUtils for IdentOption {
+impl ParseOptionUtils for IdentOption {
     #[inline]
     fn parse_option_from_str(_path: &str) -> Option<Self> {
         None

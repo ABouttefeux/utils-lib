@@ -2,9 +2,8 @@
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::Field;
 
-use super::{attribute_option::ToCode, ImmutableGetterOption, MutableGetterOption};
+use super::{attribute_option::ToCode, field::Field, ImmutableGetterOption, MutableGetterOption};
 
 /// Determine which getter type is being implemented.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

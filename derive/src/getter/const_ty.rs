@@ -3,12 +3,12 @@
 use std::fmt::{self, Display};
 
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::{Expr, ExprLit, Field, Lit, MetaNameValue};
+use quote::{quote, ToTokens};
+use syn::{Expr, ExprLit, Lit, MetaNameValue};
 
 use super::{
-    attribute_option::{FieldAttributeOptionParseUtils, ToCode},
-    error::{AcceptableParseError, FieldAttributeOptionParseError, UnacceptableParseError},
+    attribute_option::ParseOptionUtils,
+    error::{AcceptableParseError, ParseOptionError, UnacceptableParseError},
 };
 
 /// Option to determine if a getter should be constant or not.
@@ -38,7 +38,7 @@ impl ConstTy {
     }
 }
 
-impl FieldAttributeOptionParseUtils for ConstTy {
+impl ParseOptionUtils for ConstTy {
     #[inline]
     fn parse_option_from_str(path: &str) -> Option<Self> {
         Self::left_hand_path_accepted(path).then_some(Self::Constant)
@@ -58,9 +58,7 @@ impl FieldAttributeOptionParseUtils for ConstTy {
     }
 
     #[inline]
-    fn parse_name_value(
-        name_value: &MetaNameValue,
-    ) -> Result<Self, FieldAttributeOptionParseError> {
+    fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, ParseOptionError> {
         if Self::left_hand_path_accepted(
             &name_value
                 .path
@@ -92,10 +90,9 @@ impl FieldAttributeOptionParseUtils for ConstTy {
     }
 }
 
-impl ToCode for ConstTy {
-    #[inline]
-    fn to_code(&self, _field: &Field) -> TokenStream2 {
-        self.quote()
+impl ToTokens for ConstTy {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        tokens.extend(self.quote());
     }
 }
 

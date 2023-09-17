@@ -1,10 +1,9 @@
 //! Contains [`SelfTy`]
 
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::Field;
+use quote::{quote, ToTokens};
 
-use super::attribute_option::{FieldAttributeOptionParseUtils, ToCode};
+use super::attribute_option::ParseOptionUtils;
 
 /// TODO
 ///
@@ -47,7 +46,17 @@ pub enum SelfTy {
     Value,
 }
 
-impl FieldAttributeOptionParseUtils for SelfTy {
+impl SelfTy {
+    /// add a `&` symbol if it is a [`Self::Ref`] otherwise add nothing
+    fn quote(self) -> TokenStream2 {
+        match self {
+            Self::Ref => quote!(&),
+            Self::Value => quote!(),
+        }
+    }
+}
+
+impl ParseOptionUtils for SelfTy {
     fn parse_option_from_str(path: &str) -> Option<Self> {
         if path == "self" {
             Some(Self::Value)
@@ -80,12 +89,8 @@ impl FieldAttributeOptionParseUtils for SelfTy {
     }
 }
 
-impl ToCode for SelfTy {
-    #[inline]
-    fn to_code(&self, _field: &Field) -> TokenStream2 {
-        match self {
-            Self::Ref => quote! {&},
-            Self::Value => quote! {},
-        }
+impl ToTokens for SelfTy {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        tokens.extend(self.quote());
     }
 }

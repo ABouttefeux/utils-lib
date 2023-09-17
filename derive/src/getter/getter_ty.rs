@@ -5,7 +5,7 @@ use std::fmt::{self, Display};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
-use super::attribute_option::FieldAttributeOptionParseUtils;
+use super::attribute_option::ParseOptionUtils;
 
 // TODO refactoring less code duplication
 
@@ -142,7 +142,7 @@ impl GetterTy {
 //     }
 // }
 
-impl FieldAttributeOptionParseUtils for GetterTy {
+impl ParseOptionUtils for GetterTy {
     #[inline]
     fn parse_option_from_str(path: &str) -> Option<Self> {
         Self::parse_string(path)
@@ -160,6 +160,7 @@ impl FieldAttributeOptionParseUtils for GetterTy {
 }
 
 impl Display for GetterTy {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Ref => write!(f, "reference"),

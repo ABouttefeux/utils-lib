@@ -156,7 +156,6 @@ impl Error for UnacceptableParseError {
     }
 }
 
-// TODO name
 /// Error given while trying to parse a option of a field attribute.
 /// It could be that it is not applicable for the option and give [`Self::Acceptable`].
 /// Or [`Self::Unacceptable`] means that the error is not recoverable and
@@ -164,33 +163,33 @@ impl Error for UnacceptableParseError {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum FieldAttributeOptionParseError {
+pub enum ParseOptionError {
     Acceptable(AcceptableParseError),
     Unacceptable(UnacceptableParseError),
 }
 
-impl From<AcceptableParseError> for FieldAttributeOptionParseError {
+impl From<AcceptableParseError> for ParseOptionError {
     #[inline]
     fn from(value: AcceptableParseError) -> Self {
         Self::Acceptable(value)
     }
 }
 
-impl From<UnacceptableParseError> for FieldAttributeOptionParseError {
+impl From<UnacceptableParseError> for ParseOptionError {
     #[inline]
     fn from(value: UnacceptableParseError) -> Self {
         Self::Unacceptable(value)
     }
 }
 
-impl From<syn::Error> for FieldAttributeOptionParseError {
+impl From<syn::Error> for ParseOptionError {
     #[inline]
     fn from(value: syn::Error) -> Self {
         Self::from(UnacceptableParseError::from(value))
     }
 }
 
-impl Display for FieldAttributeOptionParseError {
+impl Display for ParseOptionError {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -200,7 +199,7 @@ impl Display for FieldAttributeOptionParseError {
     }
 }
 
-impl Error for FieldAttributeOptionParseError {
+impl Error for ParseOptionError {
     #[inline]
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
