@@ -12,7 +12,7 @@ use super::option_enum::{ImmutableOptionList, MutableOptionList, OptionList};
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum AttributeParseError {
+pub enum OptionParseError {
     /// the attribute is a name value which is not supported yet
     NameValue,
     /// no attribute found
@@ -22,16 +22,25 @@ pub enum AttributeParseError {
     /// Error while parsing option for getter in the filed attribute
     // TODO Name
     GetterParseError(GetterParseError<ImmutableOptionList>),
+    /// Error during the validation of the option, see [`OptionValidationError`]
+    OptionValidationError(OptionValidationError),
 }
 
-impl From<syn::Error> for AttributeParseError {
+impl From<OptionValidationError> for OptionParseError {
+    #[inline]
+    fn from(value: OptionValidationError) -> Self {
+        Self::OptionValidationError(value)
+    }
+}
+
+impl From<syn::Error> for OptionParseError {
     #[inline]
     fn from(value: syn::Error) -> Self {
         Self::ExprParseError(value)
     }
 }
 
-impl<T> From<T> for AttributeParseError
+impl<T> From<T> for OptionParseError
 where
     T: Into<GetterParseError<ImmutableOptionList>>,
 {
@@ -41,25 +50,27 @@ where
     }
 }
 
-impl Display for AttributeParseError {
+impl Display for OptionParseError {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self{
             Self::NameValue => write!(f, "field attribute is not supported in name value mode, please refer to the documentation"),
             Self::NotFound => write!(f, "attribute #[get] or #[get_mut] not found"),
             Self::ExprParseError(ref err) => write!(f, "{err}"),
-            Self::GetterParseError(ref err) => write!(f, "{err}")
+            Self::GetterParseError(ref err) => write!(f, "{err}"),
+            Self::OptionValidationError(ref err) => write!(f, "{err}"),
         }
     }
 }
 
-impl Error for AttributeParseError {
+impl Error for OptionParseError {
     #[inline]
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::NameValue | Self::NotFound => None,
             Self::ExprParseError(ref err) => Some(err),
             Self::GetterParseError(ref err) => Some(err),
+            Self::OptionValidationError(ref err) => Some(err),
         }
     }
 }
@@ -163,33 +174,33 @@ impl Error for UnacceptableParseError {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum ParseOptionError {
+pub enum ParseAttributeOptionError {
     Acceptable(AcceptableParseError),
     Unacceptable(UnacceptableParseError),
 }
 
-impl From<AcceptableParseError> for ParseOptionError {
+impl From<AcceptableParseError> for ParseAttributeOptionError {
     #[inline]
     fn from(value: AcceptableParseError) -> Self {
         Self::Acceptable(value)
     }
 }
 
-impl From<UnacceptableParseError> for ParseOptionError {
+impl From<UnacceptableParseError> for ParseAttributeOptionError {
     #[inline]
     fn from(value: UnacceptableParseError) -> Self {
         Self::Unacceptable(value)
     }
 }
 
-impl From<syn::Error> for ParseOptionError {
+impl From<syn::Error> for ParseAttributeOptionError {
     #[inline]
     fn from(value: syn::Error) -> Self {
         Self::from(UnacceptableParseError::from(value))
     }
 }
 
-impl Display for ParseOptionError {
+impl Display for ParseAttributeOptionError {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -199,7 +210,7 @@ impl Display for ParseOptionError {
     }
 }
 
-impl Error for ParseOptionError {
+impl Error for ParseAttributeOptionError {
     #[inline]
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
@@ -302,6 +313,42 @@ impl From<GetterParseError<MutableOptionList>> for GetterParseError<ImmutableOpt
             GetterParseError::AddConfigError(err, option) => {
                 Self::AddConfigError(err, option.into())
             }
+        }
+    }
+}
+
+#[allow(clippy::module_name_repetitions)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
+#[non_exhaustive]
+pub enum OptionValidationError {
+    /// name = \"#\" is missing and there is no default name for tuple struct
+    FunctionNameMissing,
+    /// self_ty is value but getter_ty is reference which is not valid,
+    /// it create a dandling reference which the borrow checker reject
+    SelfMoveOnReturnRef,
+}
+
+impl Display for OptionValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FunctionNameMissing => write!(
+                f,
+                "name = \"#\" is missing and there is no default name for tuple struct"
+            ),
+            Self::SelfMoveOnReturnRef => write!(
+                f,
+                "self_ty is value but getter_ty is reference which is not valid, \
+                it create a dandling reference which the borrow checker reject"
+            ),
+        }
+    }
+}
+
+impl Error for OptionValidationError {
+    #[inline]
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::FunctionNameMissing | Self::SelfMoveOnReturnRef => None,
         }
     }
 }

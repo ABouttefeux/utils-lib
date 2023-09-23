@@ -8,7 +8,7 @@ use syn::{Expr, ExprLit, Lit, MetaNameValue};
 
 use super::{
     attribute_option::ParseOptionUtils,
-    error::{AcceptableParseError, ParseOptionError, UnacceptableParseError},
+    error::{AcceptableParseError, ParseAttributeOptionError, UnacceptableParseError},
 };
 
 /// Option to determine if a getter should be constant or not.
@@ -58,7 +58,7 @@ impl ParseOptionUtils for ConstTy {
     }
 
     #[inline]
-    fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, ParseOptionError> {
+    fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, ParseAttributeOptionError> {
         if Self::left_hand_path_accepted(
             &name_value
                 .path

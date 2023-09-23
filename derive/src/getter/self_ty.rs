@@ -11,7 +11,7 @@ use super::attribute_option::ParseOptionUtils;
 /// - `self` or `&self`
 /// - `self = "..."`, `self_type = "..."`, `self_ty = "..."`
 /// - `self(...)`, `self_type(...)`, `self_ty(...)`
-/// where ... is `ref`, `value`, `copy`, `self` or `&self`
+/// where ... is `ref`, `value`, `copy`, `move`, `self` or `&self`
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 pub enum SelfTy {
     /// TODO
@@ -69,7 +69,7 @@ impl ParseOptionUtils for SelfTy {
 
     fn parse_option_from_str_assignment(path: &str) -> Option<Self> {
         Self::parse_option_from_str(path).or_else(|| {
-            if path == "value" || path == "copy" {
+            if path == "value" || path == "copy" || path == "move" {
                 Some(Self::Value)
             } else if path == "ref" {
                 Some(Self::Ref)

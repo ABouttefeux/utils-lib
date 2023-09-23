@@ -6,10 +6,10 @@ error: The trait getter cannot be derive on fieldless struct
   |
   = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: proc-macro derive panicked
+error: error parsing option: name = "#" is missing and there is no default name for tuple struct
  --> ui_test/fail/get.rs:6:10
   |
 6 | #[derive(Getter)]
   |          ^^^^^^
   |
-  = help: message: no field name
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)

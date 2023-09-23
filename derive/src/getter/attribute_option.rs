@@ -1,10 +1,8 @@
+use macro_utils::field::FieldInformation;
 use proc_macro2::{Ident, TokenStream as TokenStream2};
 use syn::{Expr, ExprLit, Lit, Meta, MetaList, MetaNameValue, Path};
 
-use super::{
-    error::{AcceptableParseError, ParseOptionError, UnacceptableParseError},
-    field::Field,
-};
+use super::error::{AcceptableParseError, ParseAttributeOptionError, UnacceptableParseError};
 
 // TODO name
 // TODO code to avoid duplication for parsing option
@@ -16,7 +14,7 @@ pub trait ParseOption: Sized {
     /// try to parse the option element from a [`Meta`] return [`Ok`] if the element is valid.
     ///
     /// TODO error doc
-    fn parse_option(option: &Meta) -> Result<Self, ParseOptionError>;
+    fn parse_option(option: &Meta) -> Result<Self, ParseAttributeOptionError>;
 }
 
 /// trait for option element that are parsed from [`Meta`] providing default structure
@@ -36,7 +34,6 @@ pub trait ParseOptionUtils: Sized {
     fn left_hand_path_accepted(path: &str) -> bool;
 
     /// Try parse a Self from a [`Path`] as the modifier
-    #[inline]
     #[must_use]
     fn parse_from_path(path: &Path) -> Option<Self> {
         path.get_ident()
@@ -44,14 +41,12 @@ pub trait ParseOptionUtils: Sized {
     }
 
     /// Try parse a Self from a [`Ident`] as the modifier
-    #[inline]
     #[must_use]
     fn parse_from_ident(ident: &Ident) -> Option<Self> {
         Self::parse_option_from_str(&ident.to_string())
     }
 
     /// Try parse a Self from a [`Ident`] as an assignment
-    #[inline]
     #[must_use]
     fn parse_from_ident_assignment(ident: &Ident) -> Option<Self> {
         Self::parse_option_from_str_assignment(&ident.to_string())
@@ -59,8 +54,7 @@ pub trait ParseOptionUtils: Sized {
 
     /// try to parse the option element from a [`Meta`] return [`Some`] if the element is valid
     /// [`None`] otherwise
-    #[inline]
-    fn parse_option_utils(option: &Meta) -> Result<Self, ParseOptionError> {
+    fn parse_option_utils(option: &Meta) -> Result<Self, ParseAttributeOptionError> {
         match option {
             Meta::Path(path) => Self::parse_from_path(path)
                 .ok_or_else(|| AcceptableParseError::PathNotRecognized.into()),
@@ -70,8 +64,7 @@ pub trait ParseOptionUtils: Sized {
     }
 
     /// try parse the rule from a [`MetaNameValue`]
-    #[inline]
-    fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, ParseOptionError> {
+    fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, ParseAttributeOptionError> {
         if Self::left_hand_path_accepted(
             &name_value
                 .path
@@ -89,8 +82,7 @@ pub trait ParseOptionUtils: Sized {
     }
 
     /// try parse the rule from a [`MetaList`]
-    #[inline]
-    fn parse_meta_list(meta_list: &MetaList) -> Result<Self, ParseOptionError> {
+    fn parse_meta_list(meta_list: &MetaList) -> Result<Self, ParseAttributeOptionError> {
         if Self::left_hand_path_accepted(
             &meta_list
                 .path
@@ -111,7 +103,6 @@ pub trait ParseOptionUtils: Sized {
 /// that particular expression.
 ///
 /// It is very specific but it is used to encapsulate code to parse option
-#[inline]
 #[must_use]
 fn get_string_literal(expr: &Expr) -> Option<String> {
     if let Expr::Lit(ExprLit {
@@ -128,7 +119,7 @@ fn get_string_literal(expr: &Expr) -> Option<String> {
 /// Auto implementation from [`FieldAttributeOptionParseUtils`] to an [`FieldAttributeOptionParse`]
 impl<T: ParseOptionUtils> ParseOption for T {
     #[inline]
-    fn parse_option(option: &Meta) -> Result<Self, ParseOptionError> {
+    fn parse_option(option: &Meta) -> Result<Self, ParseAttributeOptionError> {
         Self::parse_option_utils(option)
     }
 }
@@ -136,7 +127,7 @@ impl<T: ParseOptionUtils> ParseOption for T {
 // TODO review
 /// Trait to convert an option to actual implementation code
 pub trait ToCode {
-    /// get the code with the [`Field`] information
+    /// get the code with the [`FieldName`] information
     #[must_use]
-    fn to_code(&self, field: &Field) -> TokenStream2;
+    fn to_code(&self, field: &FieldInformation) -> TokenStream2;
 }

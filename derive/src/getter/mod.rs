@@ -3,9 +3,8 @@
 mod attribute_option;
 mod const_ty;
 mod error;
-mod field;
 mod getter_ty;
-mod ident_option;
+mod name;
 mod option;
 mod option_enum;
 mod self_ty;
@@ -13,15 +12,14 @@ mod syntax;
 mod visibility;
 mod which_getter;
 
+use macro_utils::field::Field;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
 pub use self::attribute_option::ParseOption;
-use self::attribute_option::ToCode;
-pub use self::error::AttributeParseError;
-use self::field::Field;
+pub use self::error::OptionParseError;
 use self::option::{GetterOption, ImmutableGetterOption, MutableGetterOption};
 use self::visibility::Visibility;
 
@@ -42,7 +40,6 @@ pub fn derive(item: TokenStream) -> TokenStream {
 
     let vec: Vec<TokenStream2> = match input.data {
         Data::Struct(data) => {
-            //
             let iter = match data.fields {
                 Fields::Named(fields) => fields.named.into_iter(),
                 Fields::Unnamed(fields) => fields.unnamed.into_iter(),
@@ -56,11 +53,12 @@ pub fn derive(item: TokenStream) -> TokenStream {
 
             iter.enumerate()
                 .filter_map(|(field_index, field)| {
-                    let option = GetterOption::parse(&field.attrs);
+                    let field = Field::new(field, field_index);
+                    let option = GetterOption::parse(field);
 
                     match option {
-                        Ok(option) => Some(option.to_code(&Field::new(field, field_index))),
-                        Err(AttributeParseError::NotFound) => None,
+                        Ok(option) => Some(option.into_token_stream()),
+                        Err(OptionParseError::NotFound) => None,
                         Err(err) => {
                             //println!("error parsing option: {err}");
                             let message = format!("error parsing option: {err}");

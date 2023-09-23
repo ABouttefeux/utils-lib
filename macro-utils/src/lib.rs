@@ -56,7 +56,7 @@
 #![warn(clippy::missing_assert_message)]
 #![warn(clippy::missing_const_for_fn)]
 #![warn(clippy::missing_enforced_import_renames)]
-#![warn(clippy::missing_inline_in_public_items)]
+//#![warn(clippy::missing_inline_in_public_items)]
 #![warn(clippy::mixed_read_write_in_expression)]
 // #![warn(clippy::module_name_repetitions)] // allow
 // #![warn(clippy::multiple_unsafe_ops_per_block)]
@@ -129,6 +129,7 @@
 
 #[macro_use]
 mod macro_def;
+pub mod field;
 
 #[cfg(test)]
 mod test;

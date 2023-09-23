@@ -1,12 +1,16 @@
 //! Contains [`WhichGetter`]
 
+use macro_utils::field::FieldInformation;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
-use super::{attribute_option::ToCode, field::Field, ImmutableGetterOption, MutableGetterOption};
+use super::{
+    attribute_option::ToCode, error::OptionValidationError, ImmutableGetterOption,
+    MutableGetterOption,
+};
 
 /// Determine which getter type is being implemented.
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Clone)]
 pub enum WhichGetter {
     /// Immutable getter.
     Immutable(ImmutableGetterOption),
@@ -57,11 +61,23 @@ impl WhichGetter {
             (_, output @ Self::Both { .. }) => output,
         }
     }
+
+    /// Verify that the option is valid
+    pub fn validate(&self) -> Result<(), OptionValidationError> {
+        match self {
+            Self::Immutable(immutable) => immutable.validate(),
+            Self::Mutable(mutable) => mutable.validate(),
+            Self::Both { immutable, mutable } => {
+                mutable.validate()?;
+                immutable.validate()
+            }
+        }
+    }
 }
 
 impl ToCode for WhichGetter {
     #[inline]
-    fn to_code(&self, field: &Field) -> TokenStream2 {
+    fn to_code(&self, field: &FieldInformation) -> TokenStream2 {
         match self {
             Self::Immutable(i) => i.to_code(field),
             Self::Mutable(m) => m.to_code(field),

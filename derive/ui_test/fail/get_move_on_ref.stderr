@@ -1,0 +1,7 @@
+error: error parsing option: self_ty is value but getter_ty is reference which is not valid, it create a dandling reference which the borrow checker reject
+ --> ui_test/fail/get_move_on_ref.rs:3:10
+  |
+3 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)

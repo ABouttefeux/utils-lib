@@ -2,6 +2,7 @@
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
+use syn::Path;
 
 use super::attribute_option::ParseOptionUtils;
 
@@ -13,7 +14,7 @@ use super::attribute_option::ParseOptionUtils;
 /// - pub, public, crate, pub(...), private,
 /// - Visibility = "..."
 /// - Visibility("...")
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+#[derive(Clone, Default)]
 pub enum Visibility {
     /// Public, pub modifier like `pub fn`.
     Public,
@@ -22,7 +23,7 @@ pub enum Visibility {
     /// Default value
     Private,
     /// Crate visibility like `pub(crate) fn` or `pub(super) fn`
-    Crate(Option<String>),
+    Crate(Option<Path>),
 }
 
 impl Visibility {
@@ -56,19 +57,20 @@ impl Visibility {
     //         .and_then(|ident| Self::visibility_from_path_str(&ident.to_string()))
     // }
 
+    // TODO
     /// Try parse a a [`Visibility`] from a `&str` as the modifier
     #[inline]
     fn visibility_from_path_str(string: &str) -> Option<Self> {
-        if string == "pub" || string == "public" {
+        if string == "pub" || string == "public" || string == "Public" || string == "Pub" {
             return Some(Self::Public);
-        } else if string == "crate" {
+        } else if string == "crate" || string == "Crate" {
             return Some(Self::Crate(None));
-        } else if string == "private" {
+        } else if string == "private" || string == "Private" {
             return Some(Self::Private);
         } else if let Some((left, right)) = string.split_once('(') {
             if left == "pub" {
                 if let Some(vis_path) = right.strip_suffix(')') {
-                    return Some(Self::Crate(Some(vis_path.to_owned())));
+                    return Some(Self::Crate(Some(syn::parse_str(vis_path).ok()?)));
                 }
             }
         }
@@ -99,14 +101,11 @@ impl Visibility {
     /// create a token a quote of the visibility
     fn quote(&self) -> TokenStream2 {
         match self {
-            Self::Private => TokenStream2::new(),
-            Self::Public => quote! {pub},
-            Self::Crate(opt_str) => {
-                // TODO fix
-                let opt_str = opt_str.as_ref().map_or("crate", |s| s.as_str());
-
-                quote! {pub(#opt_str)}
-            }
+            Self::Private => quote!(),
+            Self::Public => quote!(pub),
+            Self::Crate(path) => path
+                .as_ref()
+                .map_or_else(|| quote!(pub(crate)), |path| quote!(pub(#path))),
         }
     }
 }

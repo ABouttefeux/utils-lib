@@ -4,6 +4,10 @@ use syn::{
     Lit, MacroDelimiter, Token,
 };
 
+pub struct SeparatedTokenStream {
+    token_stream: TokenStream2,
+}
+
 #[derive(Clone)]
 enum AcceptedSyntax {
     Value(Value),

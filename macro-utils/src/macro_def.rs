@@ -1,5 +1,6 @@
 //! contains macro definitions
 
+/// create a getter function
 #[macro_export]
 macro_rules! getter {
     ($(#[$meta:meta])* $v:vis fn $i:ident() -> $t:ty ) => {
