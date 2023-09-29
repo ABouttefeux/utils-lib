@@ -129,6 +129,7 @@
 //#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize)]
 
 mod getter;
+mod new;
 mod sealed;
 #[cfg(any(test, doctest))] // cspell: ignore doctest
 mod test;
@@ -562,6 +563,13 @@ pub fn trait_sealed(item: TokenStream) -> TokenStream {
 #[proc_macro_derive(Getter, attributes(get, get_mut))]
 pub fn derive_getter(item: TokenStream) -> TokenStream {
     getter::derive(item)
+}
+
+#[inline]
+#[must_use]
+#[proc_macro_derive(New, attributes(new))]
+pub fn derive_new(item: TokenStream) -> TokenStream {
+    new::derive(item)
 }
 
 // #[proc_macro_derive(Getter, attributes(get))]
