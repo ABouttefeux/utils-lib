@@ -1,3 +1,6 @@
+//! Contains the trait [`ParseOption`] and its helper trait [`ParseOptionUtils`]
+//! and [`ToCode`]
+
 use macro_utils::field::FieldInformation;
 use proc_macro2::{Ident, TokenStream as TokenStream2};
 use syn::{Expr, ExprLit, Lit, Meta, MetaList, MetaNameValue, Path};

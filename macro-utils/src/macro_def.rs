@@ -16,3 +16,11 @@ macro_rules! getter {
         }
     };
 }
+
+/// Creates a quote with compile error with the given message
+#[macro_export]
+macro_rules! quote_compile_error {
+    ($($tt:tt)* ) => {
+        quote::quote! {compile_error!($($tt)*);}.into()
+    };
+}

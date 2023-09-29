@@ -175,7 +175,11 @@ impl Error for UnacceptableParseError {
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum ParseAttributeOptionError {
+    /// Recoverable error that just signal that the option wasn't found by this attribute,
+    /// see [`AcceptableParseError`].
     Acceptable(AcceptableParseError),
+    /// Unrecoverable error that should lead to a compile error. This usually means an
+    /// error in the parsing, see [`UnacceptableParseError`].
     Unacceptable(UnacceptableParseError),
 }
 
@@ -220,11 +224,16 @@ impl Error for ParseAttributeOptionError {
     }
 }
 
+/// Error return by [`super::option::ParseGetterOption::add_config`]. This represent an
+/// error while trying to add an new option to the configuration. The attribute could represent
+/// no option and return [`Self::Acceptable`] and be skipped. Or return an error for a certain
+/// option represented by `T` (of trait [`OptionList`]) by te variant [`Self::Unacceptable`].
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum AddConfigError<T: OptionList> {
-    /// No configuration could added for Acceptable reason.
+    /// Recoverable error. This means that no option for this attribute was found
+    /// and therefore it was skipped
     Acceptable(AcceptableParseError),
     /// Error while trying to add given configuration.
     Unacceptable(UnacceptableParseError, T),
@@ -269,6 +278,15 @@ impl<T: OptionList + Debug + Display> Error for AddConfigError<T> {
     }
 }
 
+/// Error return by [`super::option::ParseGetterOption::parse`]. It is the error returned by
+/// parsing a [`supper::which_getter::WhichGetter`] variant, a getter (attribute) option.
+/// It has either an unacceptable error from a [`AddConfigError::Unacceptable`],
+/// [`Self::AddConfigError`] or an error from adding the same option multiple time
+/// [`Self::FieldAttributeOptionSetMultipleTimes`].
+///
+/// Note here that we stop propagating the [`AddConfigError::Acceptable`] variant
+/// because as we said it was just a way to signal that any option wasn't found
+/// and shouldn't lead to an compile error. Maybe latter I will convert that to an error.
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
@@ -317,6 +335,7 @@ impl From<GetterParseError<MutableOptionList>> for GetterParseError<ImmutableOpt
     }
 }
 
+/// Error return by validation function that verify the integrity of the configuration.
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
 #[non_exhaustive]

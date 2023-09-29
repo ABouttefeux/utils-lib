@@ -1,4 +1,4 @@
-error: The trait getter cannot be derive on fieldless struct
+error: The trait getter cannot be derive on fieldless struct.
  --> ui_test/fail/get.rs:3:10
   |
 3 | #[derive(Getter)]

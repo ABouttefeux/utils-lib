@@ -19,6 +19,8 @@ use serde::{Deserialize, Serialize};
 use super::{compare_f64, Validation, ValidationGuard};
 use crate::ZeroOneBoundedFloat;
 
+// TODO see if it is possible to use a trait to merge code of PositiveFloat and ZeroOneBoundedFloats.
+
 /// A float that is `>= 0` and is not [`f64::NAN`] or [`f64::INFINITY`].
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

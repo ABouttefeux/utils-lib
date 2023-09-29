@@ -1,3 +1,6 @@
+//! Contain the option container [`GetterOption`] and [`super::which_getter::WhichGetter`]
+//! variant [`MutableGetterOption`] and [`ImmutableGetterOption`]
+
 #![allow(clippy::module_name_repetitions)] // TODO
 
 use std::collections::HashSet;
@@ -122,10 +125,10 @@ impl GetterOption {
         Ok(getter_option)
     }
 
-    /// Merge two configuration giving the priority to the `other` config, see [`WhichGetter::add_config`]
-    fn add_config(self, other: WhichGetter) -> Self {
-        Self::new(self.field, self.which.add_config(other))
-    }
+    // /// Merge two configuration giving the priority to the `other` config, see [`WhichGetter::add_config`]
+    // fn add_config(self, other: WhichGetter) -> Self {
+    //     Self::new(self.field, self.which.add_config(other))
+    // }
 
     /// Verify that the option is valid
     fn validate(&self) -> Result<(), OptionValidationError> {

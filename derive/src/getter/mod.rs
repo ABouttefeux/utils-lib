@@ -13,6 +13,7 @@ mod visibility;
 mod which_getter;
 
 use macro_utils::field::Field;
+use macro_utils::quote_compile_error;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
@@ -22,13 +23,6 @@ pub use self::attribute_option::ParseOption;
 pub use self::error::OptionParseError;
 use self::option::{GetterOption, ImmutableGetterOption, MutableGetterOption};
 use self::visibility::Visibility;
-
-/// Creates a quote with compile error with the given message
-macro_rules! quote_compile_error {
-    ($($tt:tt)* ) => {
-        quote! {compile_error!($($tt)*);}.into()
-    };
-}
 
 // TODO share option for both
 
@@ -46,7 +40,7 @@ pub fn derive(item: TokenStream) -> TokenStream {
                 Fields::Unit => {
                     // cspell: ignore fieldless
                     return quote_compile_error!(
-                        "The trait getter cannot be derive on fieldless struct"
+                        "The trait getter cannot be derive on fieldless struct."
                     );
                 }
             };
@@ -69,15 +63,15 @@ pub fn derive(item: TokenStream) -> TokenStream {
                 .collect::<Vec<TokenStream2>>()
         }
         Data::Enum(_) => {
-            return quote_compile_error!("cannot derive getter for enums yet");
+            return quote_compile_error!("It is not possible to derive getter for enums yet.");
         }
         Data::Union(_) => {
-            return quote_compile_error!("cannot derive getter for unions yet");
+            return quote_compile_error!("It is not possible to derive getter for unions yet.");
         }
     };
 
     let out = if vec.is_empty() {
-        quote_compile_error!("no field has attribute #[get] or #[get_mut]")
+        quote_compile_error!("No field has attribute #[get] or #[get_mut] has been found.")
     } else {
         let name = input.ident;
         let generics = input.generics;

@@ -1,4 +1,4 @@
-error: cannot derive getter for enums yet
+error: It is not possible to derive getter for enums yet.
  --> ui_test/fail/get_enum.rs:3:10
   |
 3 | #[derive(Getter)]
