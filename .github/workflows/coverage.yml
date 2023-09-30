@@ -27,9 +27,8 @@ jobs:
 
       - name: Generate code coverage
         run: |
-          export RUSTFLAGS="-Zinstrument-coverage"
-          export RUSTDOCFLAGS="-Zinstrument-coverage -Zunstable-options --persist-doctests target/debug/doctestbins"
-          cargo +nightly build --verbose --all
+          export RUSTFLAGS="-Cinstrument-coverage"
+          export RUSTDOCFLAGS="-Cinstrument-coverage -Zunstable-options --persist-doctests target/debug/doctestbins"
           LLVM_PROFILE_FILE="utils-lib-%p-%m.profraw" cargo +nightly test --verbose --all
 
       - name: parse code coverage

@@ -10,14 +10,8 @@ fn test_html_root_url() {
 
 // run $env:TRYBUILD="overwrite"; cargo t -p utils-lib-derive
 #[test]
-fn ui_pass() {
+fn ui() {
     let t = trybuild::TestCases::new();
     t.pass("ui_test/pass/*.rs");
-}
-
-// run $env:TRYBUILD="overwrite"; cargo t -p utils-lib-derive
-#[test]
-fn ui_fail() {
-    let t = trybuild::TestCases::new();
     t.compile_fail("ui_test/fail/*.rs");
 }
