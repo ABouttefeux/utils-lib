@@ -25,7 +25,3 @@ utils-lib-derive = { path = "derive" }
 
 [dev-dependencies]
 version-sync = "0.9.5"
-
-
-[profile.release]
-lto = true

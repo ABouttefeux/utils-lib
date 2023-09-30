@@ -50,7 +50,10 @@ macro_rules! impl_float_const {
         #[cfg(not(debug_assertions))]
         #[inline]
         fn $fn() -> Self {
-            unsafe { Self::new_unchecked(f64::$fn()) }
+            // SAFETY:
+            // this is safe as the constant is in the bound
+            //unsafe { Self::new_unchecked(f64::$fn()) }
+            Self(f64::$fn())
         }
     };
 }
@@ -139,7 +142,8 @@ impl Pow<Self> for PositiveFloat {
     #[cfg(not(debug_assertions))]
     #[inline]
     fn pow(self, rhs: Self) -> Self::Output {
-        unsafe { Self::new_unchecked(self.float().pow(rhs.float())) }
+        // unsafe { Self::new_unchecked(self.float().pow(rhs.float())) }
+        Self::new_or_bounded(self.float().pow(rhs.float()))
     }
 }
 
@@ -210,7 +214,8 @@ impl MulAdd for PositiveFloat {
     #[cfg(not(debug_assertions))]
     fn mul_add(self, a: Self, b: Self) -> Self::Output {
         let mul_add = self.float().mul_add(a.float(), b.float());
-        unsafe { Self::new_unchecked(mul_add) }
+        //unsafe { Self::new_unchecked(mul_add) }
+        Self::new_or_bounded(mul_add)
     }
 }
 

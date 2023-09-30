@@ -117,49 +117,51 @@ impl PositiveFloat {
         }
     }
 
-    /// Create a wrapped value skipping the validity check
-    ///
-    /// # Safety
-    /// make sure that the float is valid
-    #[cfg_attr(debug_assertions, allow(dead_code))] // it is used by new_partially_check
-    #[must_use]
-    #[inline]
-    const unsafe fn new_unchecked(float: f64) -> Self {
-        Self(float)
-    }
+    // /// Create a wrapped value skipping the validity check
+    // ///
+    // /// # Safety
+    // /// make sure that the float is valid
+    // //# [cfg(any(not(debug_assertions), doc, test))]
+    // // #[cfg_attr(debug_assertions, allow(dead_code))] // it is used by new_partially_check
+    // #[must_use]
+    // #[inline]
+    // const unsafe fn new_unchecked(float: f64) -> Self {
+    //     Self(float)
+    // }
 
-    /// Create a wrapped value doing the validity check only when [`debug_assertions`]
-    /// and panics if the value is not valid. Otherwise it wraps the value even if it is not valid
-    ///
-    /// # Panic
-    /// Panics if the value if not valid and [`debug_assertions`] is on
-    ///
-    /// # Safety
-    /// make sure that the float is valid
-    #[cfg(not(debug_assertions))]
-    #[must_use]
-    #[inline]
-    unsafe fn new_partially_check(float: f64) -> Self {
-        Self::new_unchecked(float)
-    }
+    // /// see the other [`Self::new_partially_check`]
+    // // It is the other one which is documented
+    // #[allow(clippy::missing_const_for_fn)] // it has to keep the same signature, the other fn can't be const
+    // #[cfg(not(debug_assertions))]
+    // #[must_use]
+    // #[inline]
+    // unsafe fn new_partially_check(float: f64) -> Self {
+    //     Self::new_unchecked(float)
+    // }
 
-    /// Create a wrapped value doing the validity check only when [`debug_assertions`]
-    /// and panics if the value is not valid. Otherwise it wraps the value even if it is not valid
-    ///
-    /// # Panic
-    /// Panics if the value if not valid and [`debug_assertions`] is on
-    ///
-    /// # Safety
-    /// make sure that the float is valid
-    #[cfg(debug_assertions)]
-    #[must_use]
-    #[inline]
-    unsafe fn new_partially_check(float: f64) -> Self {
-        Self::new(float).expect("invalid value")
-    }
+    // /// Create a wrapped value doing the validity check only when [`debug_assertions`]
+    // /// and panics if the value is not valid. Otherwise it wraps the value even if it is not valid
+    // ///
+    // /// # Panic
+    // /// Panics if the value if not valid and [`debug_assertions`] is on
+    // ///
+    // /// # Safety
+    // /// make sure that the float is valid
+    // #[cfg(debug_assertions)]
+    // #[must_use]
+    // #[inline]
+    // unsafe fn new_partially_check(float: f64) -> Self {
+    //     Self::new(float).expect("invalid value")
+    // }
 
     /// Create a new Self from a [`f64`]. It returns [`Some`] only if the float is valid ([`Self::validate_data`]), i.e.
     /// it is >= 0 it is not [`f64::NAN`] and not [`f64::INFINITY`].
+    ///
+    /// # Errors
+    ///
+    /// - If `float` is smaller than zero it returns [`ConversionError::TooLow`].
+    /// - If `float` is [`f64::INFINITY`] it returns [`ConversionError::Infinity`].
+    /// - If `float` is [`f64::NAN`] it returns [`ConversionError::Nan`].
     ///
     /// # Example
     /// ```
@@ -402,13 +404,14 @@ impl From<ZeroOneBoundedFloat> for PositiveFloat {
     #[cfg(debug_assertions)]
     #[inline]
     fn from(value: ZeroOneBoundedFloat) -> Self {
-        Self::new(value.float()).expect("always positive")
+        Self::new(value.float()).expect("the value could not be converted as it is not valid")
     }
 
     #[cfg(not(debug_assertions))]
     #[inline]
     fn from(value: ZeroOneBoundedFloat) -> Self {
-        unsafe { Self::new_unchecked(value.float()) }
+        //unsafe { Self::new_unchecked(value.float()) }
+        Self::new_or_bounded(value.float())
     }
 }
 

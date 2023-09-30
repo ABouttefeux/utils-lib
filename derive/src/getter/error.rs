@@ -8,7 +8,7 @@ use std::{
 use super::option_enum::{ImmutableOptionList, MutableOptionList, OptionList};
 
 // TODO names
-
+/// Error return by [`super::option::GetterOption::parse`].
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[non_exhaustive]

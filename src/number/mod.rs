@@ -1,3 +1,5 @@
+//! Contains number and math utilities.
+
 mod function;
 mod num_op_traits;
 pub mod positive_float;

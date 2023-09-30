@@ -1,6 +1,6 @@
 kind: pipeline
 type: docker
-name: test
+name: rust test
 
 steps:
 - name: test
@@ -14,7 +14,6 @@ kind: pipeline
 type: docker
 name: "doc"
 
-
 steps:
 - name: "doc"
   image: rust
@@ -27,7 +26,6 @@ kind: pipeline
 type: docker
 name: "fmt check"
 
-
 steps:
 - name: "fmt check"
   image: rust
@@ -35,8 +33,3 @@ steps:
   - rustup install nightly
   - rustup +nightly component add rustfmt
   - cargo +nightly fmt --all --check
-
----
-kind: pipeline
-type: docker
-name: "coverage"
