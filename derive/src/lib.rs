@@ -129,7 +129,7 @@
 
 mod getter;
 mod sealed;
-#[cfg(test)]
+#[cfg(any(test, doc))]
 mod test;
 
 use proc_macro::TokenStream;

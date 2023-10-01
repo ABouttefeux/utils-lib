@@ -11,6 +11,9 @@ publish = false
 [lib]
 proc-macro = true
 
+[features]
+coverage = []
+
 [dependencies]
 quote = "1.0"
 syn = "2.0"
