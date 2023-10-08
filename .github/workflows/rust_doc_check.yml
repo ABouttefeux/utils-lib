@@ -1,11 +1,7 @@
 name: Rust Doc check
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-    
+on: [push, pull_request]
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -22,6 +18,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        components: rust-docs
     
     - name: Doc
       run: cargo doc --all --no-deps --document-private-items

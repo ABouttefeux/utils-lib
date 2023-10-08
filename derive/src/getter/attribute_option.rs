@@ -21,7 +21,7 @@ pub trait ParseOption: Sized {
 }
 
 /// trait for option element that are parsed from [`Meta`] providing default structure
-/// to implement [`AttributeOptionParse`] more easily
+/// to implement [`ParseOption`] more easily
 #[allow(clippy::module_name_repetitions)] // TODO
 pub trait ParseOptionUtils: Sized {
     /// Try parse the option from a string
@@ -119,7 +119,7 @@ fn get_string_literal(expr: &Expr) -> Option<String> {
     }
 }
 
-/// Auto implementation from [`FieldAttributeOptionParseUtils`] to an [`FieldAttributeOptionParse`]
+/// Auto implementation from [`ParseOptionUtils`] to an [`ParseOption`]
 impl<T: ParseOptionUtils> ParseOption for T {
     #[inline]
     fn parse_option(option: &Meta) -> Result<Self, ParseAttributeOptionError> {
@@ -130,7 +130,7 @@ impl<T: ParseOptionUtils> ParseOption for T {
 // TODO review
 /// Trait to convert an option to actual implementation code
 pub trait ToCode {
-    /// get the code with the [`FieldName`] information
+    /// get the code with the [`FieldInformation`] information
     #[must_use]
     fn to_code(&self, field: &FieldInformation) -> TokenStream2;
 }

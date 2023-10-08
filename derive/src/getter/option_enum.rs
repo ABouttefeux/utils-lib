@@ -10,7 +10,7 @@ use std::{
 /// [`MutableOptionList`] and [`ImmutableOptionList`].
 pub trait OptionList {}
 
-/// List option for [`MutableGetterOption`]
+/// List option for [`super::option::MutableGetterOption`]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub enum MutableOptionList {
     /// Visibility
@@ -31,7 +31,7 @@ impl Display for MutableOptionList {
     }
 }
 
-/// List option for [`ImmutableGetterOption`]
+/// List option for [`super::option::ImmutableGetterOption`]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub enum ImmutableOptionList {
     /// Common option with mut getter:

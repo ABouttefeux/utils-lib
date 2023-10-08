@@ -1,17 +1,12 @@
 name: fmt
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   fmt:
-    
     runs-on: ubuntu-latest
     
     steps:
@@ -22,7 +17,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: nightly
-        components: rustfmt,
+        components: rustfmt
     
     - name: fmt
       run: cargo +nightly fmt --all -- --check

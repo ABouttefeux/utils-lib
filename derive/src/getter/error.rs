@@ -15,7 +15,7 @@ use super::option_enum::{ImmutableOptionList, MutableOptionList, OptionList};
 pub enum OptionParseError {
     /// the attribute is a name value which is not supported yet
     NameValue,
-    /// no attribute found
+    /// no attribute found and at least one is necessary
     NotFound,
     /// Parse error form syn
     ExprParseError(syn::Error),
@@ -55,7 +55,7 @@ impl Display for OptionParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self{
             Self::NameValue => write!(f, "field attribute is not supported in name value mode, please refer to the documentation"),
-            Self::NotFound => write!(f, "attribute #[get] or #[get_mut] not found"),
+            Self::NotFound => write!(f, "attribute #[get] or #[get_mut] not found and at least one is necessary"),
             Self::ExprParseError(ref err) => write!(f, "{err}"),
             Self::GetterParseError(ref err) => write!(f, "{err}"),
             Self::OptionValidationError(ref err) => write!(f, "{err}"),
@@ -279,7 +279,7 @@ impl<T: OptionList + Debug + Display> Error for AddConfigError<T> {
 }
 
 /// Error return by [`super::option::ParseGetterOption::parse`]. It is the error returned by
-/// parsing a [`supper::which_getter::WhichGetter`] variant, a getter (attribute) option.
+/// parsing a [`super::which_getter::WhichGetter`] variant, a getter (attribute) option.
 /// It has either an unacceptable error from a [`AddConfigError::Unacceptable`],
 /// [`Self::AddConfigError`] or an error from adding the same option multiple time
 /// [`Self::FieldAttributeOptionSetMultipleTimes`].

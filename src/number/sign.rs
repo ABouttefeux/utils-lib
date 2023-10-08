@@ -3,10 +3,13 @@
 use std::{
     cmp::Ordering,
     fmt::{self, Display},
+    num::FpCategory,
     ops::{Mul, MulAssign, Neg},
 };
 
 use serde::{Deserialize, Serialize};
+
+// TODO conversion
 
 /// Represent a sign.
 #[allow(clippy::exhaustive_enums)]
@@ -38,13 +41,17 @@ impl Sign {
     ///
     /// If the value is very close to zero but not quite the sing will nonetheless be [`Sign::Zero`].
     /// If f is NaN the sing will be [`Sign::Zero`].
+    ///
+    /// It may become constant once [`f64::classify`] and [`f64::is_sign_positive`] become
+    /// constant as well.
+    #[warn(clippy::missing_const_for_fn)]
     #[must_use]
     #[inline]
     pub fn sign_f64(f: f64) -> Self {
         // TODO abs_diff_eq!(f, 0_f64)
-        if f == 0_f64 || f.is_subnormal() || f.is_nan() {
+        if let FpCategory::Zero | FpCategory::Subnormal | FpCategory::Nan = f.classify() {
             Self::Zero
-        } else if f > 0_f64 {
+        } else if f.is_sign_positive() {
             Self::Positive
         } else {
             Self::Negative

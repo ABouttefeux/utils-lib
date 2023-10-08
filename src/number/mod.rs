@@ -46,9 +46,24 @@ pub trait Validation {
 pub struct ValidationGuard<'a, T: Validation + ?Sized> {
     /// the mut ref in order to "lock" the PositiveFloat and mutated on [`Drop`].
     #[serde(skip)]
-    positive_float: &'a mut T,
+    reference: &'a mut T,
     /// The new value
     float: f64,
+}
+
+impl<'a, T> ValidationGuard<'a, T>
+where
+    T: Validation + ?Sized + Into<f64> + Clone,
+{
+    /// Create a new [`ValidationGuard`] from a mut reference.
+    #[must_use]
+    #[inline]
+    pub fn new(reference: &'a mut T) -> Self {
+        Self {
+            float: reference.clone().into(),
+            reference,
+        }
+    }
 }
 
 impl<'a, T: Validation + ?Sized> ValidationGuard<'a, T> {
@@ -95,7 +110,7 @@ impl<'a, T: Validation + ?Sized> DerefMut for ValidationGuard<'a, T> {
 impl<'a, T: Validation + ?Sized> Drop for ValidationGuard<'a, T> {
     #[inline]
     fn drop(&mut self) {
-        self.positive_float.set_float(self.float);
+        self.reference.set_float(self.float);
     }
 }
 
@@ -111,12 +126,47 @@ impl<'a, T: Validation + ?Sized> Display for ValidationGuard<'a, T> {
     }
 }
 
+impl<'a, T: Validation + ?Sized> AsRef<f64> for ValidationGuard<'a, T> {
+    #[inline]
+    fn as_ref(&self) -> &f64 {
+        self.float()
+    }
+}
+
+impl<'a, T: Validation + ?Sized> AsMut<f64> for ValidationGuard<'a, T> {
+    #[inline]
+    fn as_mut(&mut self) -> &mut f64 {
+        self.float_mut()
+    }
+}
+
+impl<'a, T: Validation + ?Sized> From<ValidationGuard<'a, T>> for f64 {
+    #[inline]
+    fn from(value: ValidationGuard<'a, T>) -> Self {
+        value.float
+    }
+}
+
+impl<'a, T: Validation + ?Sized> From<&'a ValidationGuard<'a, T>> for &'a f64 {
+    #[inline]
+    fn from(value: &'a ValidationGuard<'a, T>) -> Self {
+        value.float()
+    }
+}
+
+impl<'a, T: Validation + ?Sized> From<&'a mut ValidationGuard<'a, T>> for &'a mut f64 {
+    #[inline]
+    fn from(value: &'a mut ValidationGuard<'a, T>) -> Self {
+        value.float_mut()
+    }
+}
+
 /// Do an ordering operation on two [`f64`].
 /// It is used internally for [`Ord`] and [`PartialOrd`] implementation of
 /// [`ZeroOneBoundedFloat`] and [`PositiveFloat`]
 ///
 /// # Panic
-/// It panics if only value is [`f64:NAN`] and the other one is not either
+/// It panics if only value is [`f64::NAN`] and the other one is not either
 /// [`f64::INFINITY`] or [`f64::NEG_INFINITY`]
 fn compare_f64(first: f64, other: f64) -> Ordering {
     match (first.classify(), other.classify()) {

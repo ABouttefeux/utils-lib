@@ -198,17 +198,20 @@ pub fn trait_sealed(item: TokenStream) -> TokenStream {
 ///
 /// ## Visibility
 ///
-/// by default getter are private. It is possible to change the visibility
-/// of the getter using the following syntax
+/// Determine the visibility of the getter, i.e. if it is private, public or restrained.
+/// As for function in rust by default getter are private. It is possible to change
+/// the visibility of the getter using the following syntax
 ///  accepted option :
 /// - value:
-///   - pub (wip)
-///   - public
-///   - crate (wip)
-///   - pub(...) (wip)
-///   - private
-/// - Visibility = "{value}" with {value} a previously define value
-/// - Visibility({value})
+///   - `Pub`
+///   - `Crate`
+///   - `pub` (wip)
+///   - `public`
+///   - `crate` (wip)
+///   - `pub({path})` (wip)
+///   - `private`
+/// - `Visibility = "{value}"` with `{value}` a previously define value
+/// - `Visibility({value})`
 ///
 /// ### Example
 ///
@@ -229,7 +232,101 @@ pub fn trait_sealed(item: TokenStream) -> TokenStream {
 ///
 /// ## Constant type
 ///
+/// Determine if the function is constant or not. By default it is not but I would strongly
+/// advice to make it constant.
+/// accepted option :
+/// - value:
+///   - `Const`
+///   - `const` (WIP)
+/// - `{value} = {bool}`
+/// - `{value}({bool})` (wip)
+/// with `{bool}` a boolean.
+///
+/// ### Example
+///
+/// ```
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Getter, Clone)]
+/// struct S {
+///     #[get(Const)]
+///     f: usize,
+/// }
+///
+/// const fn cst_fn(s: &S) -> &usize {
+///     // we can call f() in a const fn as it is const
+///     s.f()
+/// }
+/// ```
+///
 /// ## Getter type
+///
+/// Determine how the value is returned. It can be returned by reference, by copy or by clone.
+/// An explicit definition can be found after the example.
+/// By default the value is return by reference.
+/// accepted option :
+/// - value
+///   - `by_ref`
+///   - `by ref`
+///   - `by_value` : copy type
+///   - `by_copy`
+///   - `copy`
+///   - `Copy`
+///   - `by_clone`
+///   - `clone`
+///   - `Clone`
+/// - `{left} = "{value}"`
+/// - `{left} ({value})`
+/// with {left}
+/// - `getter_ty`
+/// - `Getter_ty`
+/// - `getter_type`
+/// - `Getter_type`
+///
+///
+/// ### Definition
+///
+/// A getter type by copy means that we write
+/// ```
+/// # struct S {
+/// #   field: u32,
+/// # }
+/// #
+/// # impl S {
+/// fn field(&self) -> u32 {
+///     self.field
+/// }
+/// # }
+/// ```
+/// It works only for type that implements [`Copy`].
+///
+/// A getter type by clone means that we write
+/// ```
+/// # struct S {
+/// #   field: String,
+/// # }
+/// #
+/// # impl S {
+/// fn field(&self) -> String {
+///     self.field.clone()
+/// }
+/// # }
+/// ```
+/// It works only for type that implements [`Clone`].
+///
+/// A getter type by reference means that we write
+/// ```
+/// # struct S {
+/// #   field: String,
+/// # }
+/// #
+/// # impl S {
+/// fn field(&self) -> &String {
+///     &self.field
+/// }
+/// # }
+/// ```
+/// This is the default behavior and does not require any traits.
 ///
 /// ## Self Type
 #[inline]

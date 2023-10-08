@@ -1,16 +1,19 @@
-//! Module containing [`Coordinate`] and [`Axis2D`]
+//! Module containing [`Coordinate`] a 2d coordinate and [`Axis2D`] an enumeration
+//! of the x and y axis.
+
+mod iterator;
 
 use std::{
-    iter::{self, FusedIterator},
-    ops::{Add, AddAssign, Not, Sub, SubAssign},
+    iter::FusedIterator,
+    ops::{Add, AddAssign, Index, IndexMut, Neg, Not, Sub, SubAssign},
 };
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::number::abs_diff;
-
-// TODO conversion for Axis2D
+#[allow(clippy::module_name_repetitions)]
+pub use self::iterator::CoordinateIterator;
+use crate::{error::NoneError, number::abs_diff};
 
 /// Represent the Axis in 2 dimensions. It can be either in the `x` direction i.e. [`Self::Vertical`]
 /// or the `y` direction, i.e. [`Self::Horizontal`].
@@ -124,12 +127,71 @@ impl Axis2D {
     }
 }
 
+/// private functions for iterator
+impl Axis2D {
+    /// gives the next index when use to index the front of [`CoordinateIterator`]
+    const fn next(self) -> Option<Self> {
+        match self {
+            Self::Vertical => Some(Self::Horizontal),
+            Self::Horizontal => None,
+        }
+    }
+
+    /// gives the previous index when use to index the back of [`CoordinateIterator`]
+    const fn next_back(val: Option<Self>) -> Option<Self> {
+        match val {
+            Some(Self::Vertical) => None,
+            Some(Self::Horizontal) => Some(Self::Vertical),
+            None => Some(Self::Horizontal),
+        }
+    }
+
+    /// gives the size hint for the index that should be used as `back - front`
+    const fn size_hint(val: Option<Self>) -> usize {
+        match val {
+            Some(axis) => axis.to_index(),
+            None => 2_usize,
+        }
+    }
+}
+
 impl Not for Axis2D {
     type Output = Self;
 
     #[inline]
     fn not(self) -> Self::Output {
         self.perpendicular()
+    }
+}
+
+impl From<Axis2D> for usize {
+    #[inline]
+    fn from(value: Axis2D) -> Self {
+        value.to_index()
+    }
+}
+
+impl From<Axis2D> for Coordinate<usize> {
+    #[inline]
+    fn from(value: Axis2D) -> Self {
+        value.coordinate_usize()
+    }
+}
+
+impl TryFrom<usize> for Axis2D {
+    // TODO
+    type Error = NoneError;
+
+    #[inline]
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        Self::from_index(value).ok_or(NoneError)
+    }
+}
+
+impl AsRef<usize> for Axis2D {
+    #[inline]
+    fn as_ref(&self) -> &usize {
+        self.as_index()
     }
 }
 
@@ -204,14 +266,19 @@ impl<T> Coordinate<T> {
     // TODO own iterator for ExactSizeIterator
     /// Get an iterator on the coordinate elements
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &T> + FusedIterator {
-        iter::once(self.x()).chain(iter::once(self.y()))
+    pub fn iter(
+        &self,
+    ) -> impl Iterator<Item = &T> + DoubleEndedIterator + FusedIterator + ExactSizeIterator {
+        self.into_iter()
     }
 
     /// Get an iterator on the coordinate elements as mutable reference
     #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> + FusedIterator {
-        iter::once(&mut self.x).chain(iter::once(&mut self.y))
+    pub fn iter_mut(
+        &mut self,
+    ) -> impl Iterator<Item = &mut T> + DoubleEndedIterator + FusedIterator + ExactSizeIterator
+    {
+        self.into_iter()
     }
 
     /// Get the [`Coordinate`] as a tuple references
@@ -328,9 +395,53 @@ where
     }
 }
 
-impl<T: AddAssign> AddAssign for Coordinate<T> {
+impl<T> Index<Axis2D> for Coordinate<T> {
+    type Output = T;
+
     #[inline]
-    fn add_assign(&mut self, rhs: Self) {
+    fn index(&self, index: Axis2D) -> &Self::Output {
+        self.get(index)
+    }
+}
+
+impl<T> IndexMut<Axis2D> for Coordinate<T> {
+    #[inline]
+    fn index_mut(&mut self, index: Axis2D) -> &mut Self::Output {
+        self.get_mut(index)
+    }
+}
+
+impl<T> Index<usize> for Coordinate<T> {
+    type Output = T;
+
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        self.as_array()[index]
+    }
+}
+
+impl<T> IndexMut<usize> for Coordinate<T> {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.as_array_mut()[index]
+    }
+}
+
+// impl<T: Clone, I> Index<I> for Coordinate<T>
+// where
+//     [T; 2]: Index<I>,
+// {
+//     type Output = <[T; 2] as Index<I>>::Output;
+
+//     #[inline]
+//     fn index(&self, index: I) -> &Self::Output {
+//         self.into_array().clone().index(index)
+//     }
+// }
+
+impl<T: AddAssign<T2>, T2> AddAssign<Coordinate<T2>> for Coordinate<T> {
+    #[inline]
+    fn add_assign(&mut self, rhs: Coordinate<T2>) {
         *self.x_mut() += rhs.x;
         *self.y_mut() += rhs.y;
     }
@@ -345,9 +456,9 @@ impl<T: Add<T2>, T2> Add<Coordinate<T2>> for Coordinate<T> {
     }
 }
 
-impl<T: SubAssign> SubAssign for Coordinate<T> {
+impl<T: SubAssign<T2>, T2> SubAssign<Coordinate<T2>> for Coordinate<T> {
     #[inline]
-    fn sub_assign(&mut self, rhs: Self) {
+    fn sub_assign(&mut self, rhs: Coordinate<T2>) {
         *self.x_mut() -= rhs.x;
         *self.y_mut() -= rhs.y;
     }
@@ -359,6 +470,15 @@ impl<T: Sub<T2>, T2> Sub<Coordinate<T2>> for Coordinate<T> {
     #[inline]
     fn sub(self, rhs: Coordinate<T2>) -> Self::Output {
         Coordinate::new(self.x - rhs.x, self.y - rhs.y)
+    }
+}
+
+impl<T: Neg<Output = T2>, T2> Neg for Coordinate<T> {
+    type Output = Coordinate<T2>;
+
+    #[inline]
+    fn neg(self) -> Self::Output {
+        Coordinate::new(-self.x, -self.y)
     }
 }
 
@@ -420,11 +540,38 @@ impl<T: Default> From<Vec<T>> for Coordinate<T> {
 #[cfg(test)]
 mod test {
 
-    use super::Axis2D;
+    use super::{Axis2D, Coordinate};
+    use crate::error::NoneError;
 
     #[test]
     fn axis_2d() {
         assert_eq!(!Axis2D::Vertical, Axis2D::Horizontal);
         assert_eq!(!Axis2D::Horizontal, Axis2D::Vertical);
+
+        assert_eq!(Into::<usize>::into(Axis2D::Vertical), 0_usize);
+        assert_eq!(Into::<usize>::into(Axis2D::Horizontal), 1_usize);
+
+        assert_eq!(
+            Into::<Coordinate<usize>>::into(Axis2D::Vertical),
+            Coordinate::new(1_usize, 0_usize)
+        );
+
+        assert_eq!(Axis2D::Vertical.as_ref(), &0_usize);
+
+        assert_eq!(Axis2D::try_from(2_usize), Err(NoneError));
+        assert_eq!(Axis2D::try_from(1_usize), Ok(Axis2D::Horizontal));
+    }
+
+    #[test]
+    fn axis_2d_iter() {
+        assert_eq!(Axis2D::Vertical.next(), Some(Axis2D::Horizontal));
+        assert_eq!(Axis2D::Horizontal.next(), None);
+
+        assert_eq!(Axis2D::next_back(None), Some(Axis2D::Horizontal));
+        assert_eq!(
+            Axis2D::next_back(Some(Axis2D::Horizontal)),
+            Some(Axis2D::Vertical)
+        );
+        assert_eq!(Axis2D::next_back(Some(Axis2D::Vertical)), None);
     }
 }

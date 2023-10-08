@@ -177,7 +177,8 @@ impl ToTokens for GetterOption {
 // TODO name
 /// trait to avoid code repetition for [`ParseGetterOption::parse`] between
 /// [`ImmutableGetterOption`] and [`MutableGetterOption`].
-trait ParseGetterOption: Sized + Default {
+// the visibility is only require for the doc link in the doc of the error.
+pub(super) trait ParseGetterOption: Sized + Default {
     /// The list of option, see [`OptionList`].
     type Option: OptionList + Hash + Eq;
 

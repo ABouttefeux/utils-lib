@@ -1,4 +1,4 @@
-//! [WIP] Contain the syntax definition for the attribute option
+//! WIP Contain the syntax definition for the attribute option
 
 // use proc_macro2::{Ident, TokenStream as TokenStream2};
 // use syn::{

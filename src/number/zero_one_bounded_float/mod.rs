@@ -77,7 +77,8 @@ impl Deref for ZeroOneBoundedFloat {
     }
 }
 
-/// represent in which range a  [`f64`] can be respectively to the bounds of [`ZeroOneBoundedFloat`]
+/// represent in which range a [`f64`] can be respectively to the bounds of
+/// [`ZeroOneBoundedFloat`]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 enum BoundRange {
     /// Strictly above 1
@@ -86,7 +87,7 @@ enum BoundRange {
     #[default]
     InRange,
     /// Strictly below 0
-    LowerRange,
+    LowerBound,
     /// Not a number
     Nan,
 }
@@ -104,10 +105,10 @@ impl ZeroOneBoundedFloat {
             BoundRange::InRange
         } else if float.is_nan() {
             BoundRange::Nan
-        } else if float >= 1_f64 {
+        } else if float > 1_f64 {
             BoundRange::UpperBound
         } else {
-            BoundRange::LowerRange
+            BoundRange::LowerBound
         }
     }
 
@@ -200,7 +201,7 @@ impl ZeroOneBoundedFloat {
     pub fn new(float: f64) -> Result<Self, ConversionError> {
         match Self::float_range(float) {
             BoundRange::InRange => Ok(Self(float)),
-            BoundRange::LowerRange => Err(ConversionError::TooLow),
+            BoundRange::LowerBound => Err(ConversionError::TooLow),
             BoundRange::UpperBound => Err(ConversionError::TooBig),
             BoundRange::Nan => Err(ConversionError::Nan),
         }
@@ -270,7 +271,7 @@ impl ZeroOneBoundedFloat {
     pub fn new_or_bounded(float: f64) -> Self {
         match Self::float_range(float) {
             BoundRange::InRange => Self(float),
-            BoundRange::LowerRange | BoundRange::Nan => Self::ZERO,
+            BoundRange::LowerBound | BoundRange::Nan => Self::ZERO,
             BoundRange::UpperBound => Self::ONE,
         }
     }
@@ -288,10 +289,7 @@ impl ZeroOneBoundedFloat {
     #[inline]
     #[must_use]
     pub fn float_mut(&mut self) -> ValidationGuard<'_, Self> {
-        ValidationGuard {
-            float: self.0,
-            positive_float: self,
-        }
+        ValidationGuard::new(self)
     }
 
     /// Returns the value of the subtraction of two numbers if it doesn't underflow.
@@ -466,6 +464,27 @@ impl TryFrom<f64> for ZeroOneBoundedFloat {
     }
 }
 
+impl From<ZeroOneBoundedFloat> for f64 {
+    #[inline]
+    fn from(value: ZeroOneBoundedFloat) -> Self {
+        value.float()
+    }
+}
+
+impl<'a> From<&'a ZeroOneBoundedFloat> for &'a f64 {
+    #[inline]
+    fn from(value: &'a ZeroOneBoundedFloat) -> Self {
+        value
+    }
+}
+
+impl<'a> From<&'a mut ZeroOneBoundedFloat> for ValidationGuard<'a, ZeroOneBoundedFloat> {
+    #[inline]
+    fn from(value: &'a mut ZeroOneBoundedFloat) -> Self {
+        value.float_mut()
+    }
+}
+
 impl Validation for ZeroOneBoundedFloat {
     #[inline]
     fn validate_data(t: f64) -> bool {
@@ -480,7 +499,7 @@ impl Validation for ZeroOneBoundedFloat {
         self.0 = match Self::float_range(float) {
             BoundRange::InRange => float,
             BoundRange::UpperBound => 1_f64,
-            BoundRange::LowerRange | BoundRange::Nan => 0_f64,
+            BoundRange::LowerBound | BoundRange::Nan => 0_f64,
         };
     }
 }

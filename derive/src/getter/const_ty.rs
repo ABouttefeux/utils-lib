@@ -15,9 +15,12 @@ use super::{
 /// By default the getter is not constant.
 ///
 /// Accept value : like `#[get(const)]` or `#[get(const = true/false)]`.
-/// - const
-/// - const = true/false
-/// - const(true/false) //TODO
+/// - const (WIP) TODO
+/// - Const
+/// - constant
+/// - Constant
+/// - Const = true/false
+/// - Const(true/false)
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 pub enum ConstTy {
     /// Non constant so the default `fn name()`.
@@ -86,7 +89,7 @@ impl ParseOptionUtils for ConstTy {
 
     #[inline]
     fn left_hand_path_accepted(path: &str) -> bool {
-        path == "const" || path == "constant" || path == "Constant"
+        path == "const" || path == "Const" || path == "constant" || path == "Constant"
     }
 }
 

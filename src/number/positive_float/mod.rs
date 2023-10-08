@@ -80,7 +80,8 @@ impl Deref for PositiveFloat {
     }
 }
 
-/// represent in which range a  [`f64`] can be respectively to the bounds of [`PositiveFloat`]
+/// represent in which range a [`f64`] can be respectively to the bounds of
+/// [`PositiveFloat`]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 enum BoundRange {
     /// [`f64::INFINITY`]
@@ -89,7 +90,7 @@ enum BoundRange {
     #[default]
     InRange,
     /// Strictly below 0
-    LowerRange,
+    LowerBound,
     /// Not a number
     Nan,
 }
@@ -113,7 +114,7 @@ impl PositiveFloat {
         } else if float == f64::INFINITY {
             BoundRange::UpperBound
         } else {
-            BoundRange::LowerRange
+            BoundRange::LowerBound
         }
     }
 
@@ -200,7 +201,7 @@ impl PositiveFloat {
     pub fn new(float: f64) -> Result<Self, ConversionError> {
         match Self::float_range(float) {
             BoundRange::InRange => Ok(Self(float)),
-            BoundRange::LowerRange => Err(ConversionError::TooLow),
+            BoundRange::LowerBound => Err(ConversionError::TooLow),
             BoundRange::Nan => Err(ConversionError::Nan),
             BoundRange::UpperBound => Err(ConversionError::Infinity),
         }
@@ -283,7 +284,7 @@ impl PositiveFloat {
         match Self::float_range(float) {
             BoundRange::InRange => Self(float),
             BoundRange::UpperBound => Self::MAX,
-            BoundRange::LowerRange | BoundRange::Nan => Self::ZERO,
+            BoundRange::LowerBound | BoundRange::Nan => Self::ZERO,
         }
     }
 
@@ -300,10 +301,7 @@ impl PositiveFloat {
     #[inline]
     #[must_use]
     pub fn float_mut(&'_ mut self) -> ValidationGuard<'_, Self> {
-        ValidationGuard {
-            float: self.0,
-            positive_float: self,
-        }
+        ValidationGuard::new(self)
     }
 
     /// Returns the value of the subtraction of two numbers if it doesn't underflow.
@@ -424,6 +422,27 @@ impl TryFrom<f64> for PositiveFloat {
     }
 }
 
+impl From<PositiveFloat> for f64 {
+    #[inline]
+    fn from(value: PositiveFloat) -> Self {
+        value.float()
+    }
+}
+
+impl<'a> From<&'a PositiveFloat> for &'a f64 {
+    #[inline]
+    fn from(value: &'a PositiveFloat) -> Self {
+        value
+    }
+}
+
+impl<'a> From<&'a mut PositiveFloat> for ValidationGuard<'a, PositiveFloat> {
+    #[inline]
+    fn from(value: &'a mut PositiveFloat) -> Self {
+        value.float_mut()
+    }
+}
+
 impl Validation for PositiveFloat {
     #[inline]
     fn validate_data(t: f64) -> bool {
@@ -438,7 +457,7 @@ impl Validation for PositiveFloat {
         self.0 = match Self::float_range(float) {
             BoundRange::InRange => float,
             BoundRange::UpperBound => f64::MAX,
-            BoundRange::LowerRange | BoundRange::Nan => 0_f64,
+            BoundRange::LowerBound | BoundRange::Nan => 0_f64,
         }
     }
 }

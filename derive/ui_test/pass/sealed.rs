@@ -1,9 +1,8 @@
+use utils_lib_derive::Sealed;
+
 mod private {
     pub trait Sealed {}
 }
-
-use utils_lib_derive::Sealed;
-
 
 #[derive(Sealed)]
 struct ZST;

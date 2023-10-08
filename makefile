@@ -1,7 +1,7 @@
 
 include utility.mk 
 
-lib_name = utils-lib.rlib
+lib_name := utils-lib.rlib
 
 source_sufix := rs
 source_files := $(foreach sufix, $(source_sufix), $(wildcard *.$(sufix) */*.$(sufix) */*/*.$(sufix) */*/*/*.$(sufix) */*/*/*/*.$(sufix) */*/*/*/*/*.$(sufix)))

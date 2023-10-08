@@ -1,8 +1,8 @@
-name: Rust-Doc
+name: Rust doc publish
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
     
 env:
   CARGO_TERM_COLOR: always
@@ -20,9 +20,10 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        components: rust-docs
     
     - name: Doc
-      run: cargo doc --all --no-deps --document-private-items
+      run: cargo doc --all --no-deps
     
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@v3

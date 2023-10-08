@@ -1,4 +1,4 @@
-//! Contains [`IdentOption`]
+//! Contains [`FunctionName`]
 
 use macro_utils::field::FieldName;
 use proc_macro2::{Ident, Span};
