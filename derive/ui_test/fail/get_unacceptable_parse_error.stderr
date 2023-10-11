@@ -1,0 +1,39 @@
+error: error parsing option: expected `,`
+ --> ui_test/fail/get_unacceptable_parse_error.rs:3:10
+  |
+3 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: error parsing option: got error the left hand side path in an assignment has multiple section and is therefore not a ident while parsing option visibility
+ --> ui_test/fail/get_unacceptable_parse_error.rs:3:10
+  |
+3 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: error parsing option: got error syn ident parse error: unexpected token while parsing option visibility
+ --> ui_test/fail/get_unacceptable_parse_error.rs:3:10
+  |
+3 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: error parsing option: got error the right hand side value is not a literal string when it is expected while parsing option visibility
+ --> ui_test/fail/get_unacceptable_parse_error.rs:3:10
+  |
+3 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: error parsing option: got error right hand value in assignment is misformed or invalid while parsing option visibility
+ --> ui_test/fail/get_unacceptable_parse_error.rs:3:10
+  |
+3 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -16,6 +16,8 @@ mod version_sync {
 #[cfg(test)]
 mod trybuild {
     // run $env:TRYBUILD="overwrite"; cargo t -p utils-lib-derive
+    // we run the test even during test coverage just to make sure that the test pass the ui
+    // component
     #[test]
     fn ui() {
         let t = trybuild::TestCases::new();
@@ -35,6 +37,9 @@ mod trybuild {
 /// ```
 /// ```compile_fail
 #[doc = include_str!("../../ui_test/fail/get_type.rs")]
+/// ```
+/// ```compile_fail
+#[doc = include_str!("../../ui_test/fail/get_unacceptable_parse_error.rs")]
 /// ```
 /// ```compile_fail
 #[doc = include_str!("../../ui_test/fail/get.rs")]

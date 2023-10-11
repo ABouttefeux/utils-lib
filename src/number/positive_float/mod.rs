@@ -465,6 +465,7 @@ impl Validation for PositiveFloat {
 #[cfg(test)]
 mod test {
     use super::{ConversionError, PositiveFloat};
+    use crate::ValidationGuard;
 
     #[test]
     fn positive_float_const() -> Result<(), ConversionError> {
@@ -514,6 +515,25 @@ mod test {
         assert_eq!(t.float(), 0_f64);
         *t.float_mut() = f64::INFINITY;
         assert_eq!(t.float(), f64::MAX);
+
+        assert_eq!(PositiveFloat::try_from(1.6_f64), Ok(PositiveFloat(1.6_f64)));
+        assert_eq!(PositiveFloat::try_from(2_f64), Ok(PositiveFloat(2_f64)));
+        assert_eq!(PositiveFloat::try_from(200_f64), Ok(PositiveFloat(200_f64)));
+        assert_eq!(
+            PositiveFloat::try_from(-1_f64),
+            Err(ConversionError::TooLow)
+        );
+
+        assert_eq!(Into::<f64>::into(PositiveFloat::new(0.9_f64)?), 0.9_f64);
+        assert_eq!(Into::<f64>::into(PositiveFloat::new(2_f64)?), 2_f64);
+        assert_eq!(Into::<&f64>::into(&PositiveFloat::new(2_f64)?), &2_f64);
+        let mut a = PositiveFloat::ONE;
+        assert_eq!(Into::<&f64>::into(&a), &1_f64);
+        let mut v = Into::<ValidationGuard<'_, PositiveFloat>>::into(&mut a);
+        assert_eq!(v.float(), &1_f64);
+        *v = 2_f64;
+        drop(v);
+        assert_eq!(a, PositiveFloat::new(2_f64)?);
 
         Ok(())
     }

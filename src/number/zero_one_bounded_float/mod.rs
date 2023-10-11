@@ -404,6 +404,72 @@ impl ZeroOneBoundedFloat {
     pub fn saturating_add(self, other: Self) -> Self {
         self.checked_add(other).unwrap_or(Self::ONE)
     }
+
+    /// Returns the value of the division of two numbers if it doesn't overflow.
+    /// It works in the same spirit as [`Self::checked_add`].
+    ///
+    /// # Errors
+    ///
+    /// See [`Self::new`]
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use utils_lib::number::ZeroOneBoundedFloatConversionError;
+    /// use utils_lib::ZeroOneBoundedFloat;
+    ///
+    /// # fn main() -> Result<(), ZeroOneBoundedFloatConversionError> {
+    /// let p1 = ZeroOneBoundedFloat::new(0.1_f64)?;
+    /// let p2 = ZeroOneBoundedFloat::new(0.5_f64)?;
+    ///
+    /// assert_eq!(p1.checked_div(p2), Ok(ZeroOneBoundedFloat::new(0.2_f64)?));
+    ///
+    /// assert_eq!(
+    ///     p2.checked_div(p1),
+    ///     Err(ZeroOneBoundedFloatConversionError::TooBig)
+    /// );
+    ///
+    /// assert_eq!(
+    ///     p1.checked_div(ZeroOneBoundedFloat::ZERO),
+    ///     Err(ZeroOneBoundedFloatConversionError::TooBig)
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    pub fn checked_div(self, other: Self) -> Result<Self, ConversionError> {
+        Self::new(self.float() / other.float())
+    }
+
+    /// Do the division of two [`ZeroOneBoundedFloat`] saturating at 1.
+    /// It works in the same spirit as [`Self::saturating_add`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use utils_lib::ZeroOneBoundedFloat;
+    /// # use utils_lib::number::zero_one_bounded_float::ConversionError;
+    ///
+    /// # fn main() -> Result<(), ConversionError> {
+    /// let p1 = ZeroOneBoundedFloat::new(0.1_f64)?;
+    /// let p2 = ZeroOneBoundedFloat::new(0.5_f64)?;
+    ///
+    /// assert_eq!(p1.saturating_div(p2), ZeroOneBoundedFloat::new(0.2_f64)?);
+    ///
+    /// assert_eq!(p2.saturating_div(p1), ZeroOneBoundedFloat::ONE);
+    ///
+    /// assert_eq!(
+    ///     p1.saturating_div(ZeroOneBoundedFloat::ZERO),
+    ///     ZeroOneBoundedFloat::ONE
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn saturating_div(self, other: Self) -> Self {
+        self.checked_div(other).unwrap_or(Self::ONE)
+    }
 }
 
 impl AsRef<f64> for ZeroOneBoundedFloat {
@@ -507,6 +573,7 @@ impl Validation for ZeroOneBoundedFloat {
 #[cfg(test)]
 mod test {
     use super::{super::Validation, ConversionError, ZeroOneBoundedFloat};
+    use crate::ValidationGuard;
 
     #[test]
     fn zero_one_bounded_float_const() -> Result<(), ConversionError> {
@@ -588,6 +655,26 @@ mod test {
         assert_eq!(t.float(), 0_f64);
         t.set_float(1E+9_f64);
         assert_eq!(t.float(), 1_f64);
+
+        assert_eq!(
+            Into::<f64>::into(ZeroOneBoundedFloat::new(0.9_f64)?),
+            0.9_f64
+        );
+        assert_eq!(
+            Into::<f64>::into(ZeroOneBoundedFloat::new(0.5_f64)?),
+            0.5_f64
+        );
+        assert_eq!(
+            Into::<&f64>::into(&ZeroOneBoundedFloat::new(0.1_f64)?),
+            &0.1_f64
+        );
+        let mut a = ZeroOneBoundedFloat::ONE;
+        assert_eq!(Into::<&f64>::into(&a), &1_f64);
+        let mut v = Into::<ValidationGuard<'_, ZeroOneBoundedFloat>>::into(&mut a);
+        assert_eq!(v.float(), &1_f64);
+        *v = 0.3_f64;
+        drop(v);
+        assert_eq!(a, ZeroOneBoundedFloat::new(0.3_f64)?);
 
         Ok(())
     }

@@ -123,7 +123,7 @@ impl ParseOptionUtils for Visibility {
 
     #[inline]
     fn left_hand_path_accepted(path: &str) -> bool {
-        path == Self::VISIBILITY_LEFT_HAND
+        path == Self::VISIBILITY_LEFT_HAND || path == "Visibility"
     }
 }
 

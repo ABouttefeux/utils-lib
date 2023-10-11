@@ -53,14 +53,14 @@ pub struct ValidationGuard<'a, T: Validation + ?Sized> {
 
 impl<'a, T> ValidationGuard<'a, T>
 where
-    T: Validation + ?Sized + Into<f64> + Clone,
+    T: Validation + ?Sized + AsRef<f64>,
 {
     /// Create a new [`ValidationGuard`] from a mut reference.
     #[must_use]
     #[inline]
     pub fn new(reference: &'a mut T) -> Self {
         Self {
-            float: reference.clone().into(),
+            float: *reference.as_ref(),
             reference,
         }
     }
@@ -154,9 +154,9 @@ impl<'a, T: Validation + ?Sized> From<&'a ValidationGuard<'a, T>> for &'a f64 {
     }
 }
 
-impl<'a, T: Validation + ?Sized> From<&'a mut ValidationGuard<'a, T>> for &'a mut f64 {
+impl<'a, 'b: 'a, T: Validation + ?Sized> From<&'a mut ValidationGuard<'b, T>> for &'a mut f64 {
     #[inline]
-    fn from(value: &'a mut ValidationGuard<'a, T>) -> Self {
+    fn from(value: &'a mut ValidationGuard<'b, T>) -> Self {
         value.float_mut()
     }
 }
@@ -204,3 +204,108 @@ fn compare_f64(first: f64, other: f64) -> Ordering {
 }
 
 //-----------------------------------
+
+#[cfg(test)]
+mod test {
+    use std::cmp::Ordering;
+
+    use super::compare_f64;
+    use crate::{PositiveFloat, ZeroOneBoundedFloat};
+
+    #[test]
+    fn cmp_f64() {
+        // cmp number number
+        assert_eq!(compare_f64(1.5_f64, 1.5_f64), Ordering::Equal);
+        assert_eq!(compare_f64(0_f64, 0_f64), Ordering::Equal);
+        assert_eq!(compare_f64(-5_f64, -5_f64), Ordering::Equal);
+
+        assert_eq!(compare_f64(-5_f64, 1_f64), Ordering::Less);
+        assert_eq!(compare_f64(1_f64, 2_f64), Ordering::Less);
+        assert_eq!(compare_f64(-5_f64, -3_f64), Ordering::Less);
+
+        assert_eq!(compare_f64(-5_f64, -30_f64), Ordering::Greater);
+        assert_eq!(compare_f64(5_f64, 2_f64), Ordering::Greater);
+        assert_eq!(compare_f64(50_f64, 1_f64), Ordering::Greater);
+
+        //------
+        // cmp inf inf
+
+        assert_eq!(compare_f64(f64::INFINITY, f64::INFINITY), Ordering::Equal);
+        assert_eq!(
+            compare_f64(f64::INFINITY, f64::NEG_INFINITY),
+            Ordering::Greater
+        );
+        assert_eq!(
+            compare_f64(f64::NEG_INFINITY, f64::INFINITY),
+            Ordering::Less
+        );
+        assert_eq!(
+            compare_f64(f64::NEG_INFINITY, f64::NEG_INFINITY),
+            Ordering::Equal
+        );
+
+        //------
+        // cmp inf _
+
+        assert_eq!(compare_f64(f64::INFINITY, f64::NAN), Ordering::Greater);
+        assert_eq!(compare_f64(f64::INFINITY, 0_f64), Ordering::Greater);
+
+        assert_eq!(compare_f64(f64::NEG_INFINITY, f64::NAN), Ordering::Less);
+        assert_eq!(compare_f64(f64::NEG_INFINITY, 0_f64), Ordering::Less);
+
+        //------
+        // cmp _ inf
+
+        assert_eq!(compare_f64(f64::NAN, f64::NEG_INFINITY), Ordering::Greater);
+        assert_eq!(compare_f64(0_f64, f64::NEG_INFINITY), Ordering::Greater);
+
+        assert_eq!(compare_f64(f64::NAN, f64::INFINITY), Ordering::Less);
+        assert_eq!(compare_f64(0_f64, f64::INFINITY), Ordering::Less);
+
+        //------
+        // cmp Nan Nan
+
+        assert_eq!(compare_f64(f64::NAN, f64::NAN), Ordering::Equal);
+    }
+
+    #[test]
+    #[should_panic(expected = "comparing NaN with 0")]
+    fn cmp_f64_fail_left() {
+        compare_f64(f64::NAN, 0_f64);
+    }
+
+    #[test]
+    #[should_panic(expected = "comparing 0 with NaN")]
+    fn cmp_f64_fail_right() {
+        compare_f64(0_f64, f64::NAN);
+    }
+
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn validation_guard_conversion() {
+        let mut p = PositiveFloat::ZERO;
+        let mut guard = p.float_mut();
+
+        assert_eq!(guard.as_ref(), &0_f64);
+        assert_eq!(guard.as_mut(), &mut 0_f64);
+        assert_eq!(Into::<&f64>::into(&guard), &0_f64);
+        assert_eq!(Into::<&mut f64>::into(&mut guard), &mut 0_f64);
+        let a = Into::<&mut f64>::into(&mut guard);
+        *a = 1_f64;
+        assert_eq!(Into::<f64>::into(guard), 1_f64);
+
+        assert_eq!(p, PositiveFloat::ONE);
+        assert_eq!(format!("{p}"), "1".to_owned());
+        let mut guard = p.float_mut();
+        assert_eq!(format!("{guard}"), "1".to_owned());
+        *guard = -1_f64;
+        assert_eq!(format!("{guard}"), "-1 (not valid)".to_owned());
+
+        let mut z = ZeroOneBoundedFloat::ONE;
+        let mut guard = z.float_mut();
+        *guard = 2_f64;
+        assert_eq!(format!("{guard}"), "2 (not valid)".to_owned());
+        *guard = f64::NAN;
+        assert_eq!(format!("{guard}"), "NaN (not valid)".to_owned());
+    }
+}

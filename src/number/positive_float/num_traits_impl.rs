@@ -6,6 +6,7 @@ use num_traits::{
 };
 
 use super::PositiveFloat;
+use crate::ZeroOneBoundedFloat;
 
 impl Zero for PositiveFloat {
     #[inline]
@@ -52,7 +53,7 @@ macro_rules! impl_float_const {
         fn $fn() -> Self {
             // SAFETY:
             // this is safe as the constant is in the bound
-            //unsafe { Self::new_unchecked(f64::$fn()) }
+            // unsafe { Self::new_unchecked(f64::$fn()) }
             Self(f64::$fn())
         }
     };
@@ -136,14 +137,33 @@ impl Pow<Self> for PositiveFloat {
     #[cfg(debug_assertions)]
     #[inline]
     fn pow(self, rhs: Self) -> Self::Output {
-        Self::new(self.float().pow(rhs.float())).expect("value not valid")
+        self.pow(rhs.float())
+    }
+}
+
+impl Pow<ZeroOneBoundedFloat> for PositiveFloat {
+    type Output = Self;
+
+    #[inline]
+    fn pow(self, rhs: ZeroOneBoundedFloat) -> Self::Output {
+        self.pow(rhs.float())
+    }
+}
+
+impl Pow<f64> for PositiveFloat {
+    type Output = Self;
+
+    #[cfg(debug_assertions)]
+    #[inline]
+    fn pow(self, rhs: f64) -> Self::Output {
+        Self::new(self.float().pow(rhs)).expect("value not valid")
     }
 
     #[cfg(not(debug_assertions))]
     #[inline]
-    fn pow(self, rhs: Self) -> Self::Output {
+    fn pow(self, rhs: f64) -> Self::Output {
         // unsafe { Self::new_unchecked(self.float().pow(rhs.float())) }
-        Self::new_or_bounded(self.float().pow(rhs.float()))
+        Self::new_or_bounded(self.float().pow(rhs))
     }
 }
 
@@ -192,9 +212,9 @@ impl Inv for PositiveFloat {
     type Output = Self;
 
     #[inline]
-    fn inv(mut self) -> Self::Output {
-        *self.float_mut() = self.float().inv();
-        self
+    fn inv(self) -> Self::Output {
+        debug_assert!(!self.is_zero(), "cannot invert zero");
+        Self::new_or_bounded(self.float().inv())
     }
 }
 
@@ -253,3 +273,205 @@ impl SaturatingMul for PositiveFloat {
 // impl WrappingSub for PositiveFloat {}
 
 // impl WrappingMul for PositiveFloat {}
+
+#[cfg(test)]
+mod test {
+    use std::error::Error;
+
+    use num_traits::{
+        Bounded, CheckedAdd, CheckedDiv, CheckedMul, FloatConst, Inv, One, Pow, SaturatingAdd,
+        SaturatingMul, Zero,
+    };
+
+    use super::PositiveFloat;
+    use crate::{number::PositiveFloatConversionError, ZeroOneBoundedFloat};
+
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn num_const() {
+        assert!(PositiveFloat::zero().is_zero());
+        assert_eq!(PositiveFloat::zero(), PositiveFloat::ZERO);
+        assert_eq!(PositiveFloat::zero().float(), 0_f64);
+
+        assert!(PositiveFloat::one().is_one());
+        assert_eq!(PositiveFloat::one(), PositiveFloat::ONE);
+        assert_eq!(PositiveFloat::one().float(), 1_f64);
+    }
+
+    #[test]
+    fn pow() -> Result<(), Box<dyn Error>> {
+        assert_eq!(
+            PositiveFloat::ONE.pow(PositiveFloat::new(32_f64)?),
+            PositiveFloat::ONE
+        );
+
+        assert_eq!(
+            PositiveFloat::new(2_f64)?.pow(ZeroOneBoundedFloat::new(0.5_f64)?),
+            PositiveFloat::SQRT_2()
+        );
+        assert_eq!(
+            PositiveFloat::new(2_f64)?.pow(PositiveFloat::new(0.5_f64)?),
+            PositiveFloat::SQRT_2()
+        );
+
+        assert_eq!(
+            PositiveFloat::new(2_f64)?.pow(PositiveFloat::new(2_f64)?),
+            PositiveFloat::new(4_f64)?
+        );
+
+        assert_eq!(
+            ZeroOneBoundedFloat::new(0.5_f64)?.pow(PositiveFloat::new(2_f64)?),
+            ZeroOneBoundedFloat::new(0.25_f64)?
+        );
+        assert_eq!(
+            ZeroOneBoundedFloat::new(0.5_f64)?.pow(2_f64),
+            PositiveFloat::new(0.25_f64)?
+        );
+
+        assert_eq!(
+            ZeroOneBoundedFloat::new(0.5_f64)?.pow(ZeroOneBoundedFloat::new(0.5_f64)?),
+            ZeroOneBoundedFloat::new(0.5_f64.sqrt())?
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn inv() -> Result<(), PositiveFloatConversionError> {
+        assert_eq!(PositiveFloat::ONE.inv(), PositiveFloat::ONE);
+        assert_eq!(
+            PositiveFloat::new(0.5_f64)?.inv(),
+            PositiveFloat::new(2_f64)?
+        );
+        assert_eq!(
+            PositiveFloat::new(2_f64)?.inv(),
+            PositiveFloat::new(0.5_f64)?
+        );
+        assert_eq!(
+            PositiveFloat::new(3_f64)?.inv(),
+            PositiveFloat::new(1_f64 / 3_f64)?
+        );
+        assert_eq!(PositiveFloat::new(4_f64)?.inv(), PositiveFloat::new(0.25)?);
+        assert_eq!(
+            PositiveFloat::new(0.01_f64)?.inv(),
+            PositiveFloat::new(100_f64)?
+        );
+        assert_eq!(
+            PositiveFloat::new(0.001_f64)?.inv(),
+            PositiveFloat::new(1000_f64)?
+        );
+
+        Ok(())
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    #[should_panic(expected = "cannot invert zero")]
+    fn inv_zero() {
+        PositiveFloat::ZERO.inv();
+    }
+
+    #[test]
+    fn math_op() -> Result<(), PositiveFloatConversionError> {
+        assert_eq!(
+            PositiveFloat::new(1_f64)? + PositiveFloat::new(4_f64)?,
+            PositiveFloat::new(5_f64)?
+        );
+
+        assert_eq!(
+            PositiveFloat::new(1_f64)?.checked_sub(PositiveFloat::new(4_f64)?),
+            Err(PositiveFloatConversionError::TooLow)
+        );
+        assert_eq!(
+            PositiveFloat::new(4_f64)?.checked_sub(PositiveFloat::new(1_f64)?),
+            Ok(PositiveFloat::new(3_f64)?)
+        );
+
+        assert_eq!(
+            PositiveFloat::new(1_f64)?.saturating_sub(PositiveFloat::new(4_f64)?),
+            PositiveFloat::zero()
+        );
+        assert_eq!(
+            PositiveFloat::new(4_f64)?.saturating_sub(PositiveFloat::new(1_f64)?),
+            PositiveFloat::new(3_f64)?
+        );
+
+        assert_eq!(
+            PositiveFloat::new(1_f64)?.saturating_add(&PositiveFloat::new(4_f64)?),
+            PositiveFloat::new(5_f64)?
+        );
+        assert_eq!(
+            PositiveFloat::new(4_f64)?.saturating_add(&PositiveFloat::new(1_f64)?),
+            PositiveFloat::new(5_f64)?
+        );
+        assert_eq!(
+            PositiveFloat::new(10_f64)?.saturating_add(&PositiveFloat::new(4_f64)?),
+            PositiveFloat::new(14_f64)?
+        );
+        assert_eq!(
+            PositiveFloat::new(f64::MAX)?.saturating_add(&PositiveFloat::new(f64::MAX)?),
+            PositiveFloat::new(f64::MAX)?
+        );
+
+        assert_eq!(
+            PositiveFloat::new(1_f64)?.checked_add(&PositiveFloat::new(4_f64)?),
+            Some(PositiveFloat::new(5_f64)?)
+        );
+        assert_eq!(
+            PositiveFloat::new(4_f64)?.checked_add(&PositiveFloat::new(1_f64)?),
+            Some(PositiveFloat::new(5_f64)?)
+        );
+        assert_eq!(
+            PositiveFloat::new(10_f64)?.checked_add(&PositiveFloat::new(4_f64)?),
+            Some(PositiveFloat::new(14_f64)?)
+        );
+        assert_eq!(
+            PositiveFloat::new(f64::MAX)?.checked_add(&PositiveFloat::new(f64::MAX)?),
+            None
+        );
+
+        assert_eq!(
+            PositiveFloat::new(3_f64)?.checked_mul(&PositiveFloat::new(4_f64)?),
+            Some(PositiveFloat::new(12_f64)?)
+        );
+        assert_eq!(
+            PositiveFloat::new(5_f64)?.checked_mul(&PositiveFloat::new(2_f64)?),
+            Some(PositiveFloat::new(10_f64)?)
+        );
+        assert_eq!(
+            PositiveFloat::new(5_f64)?.checked_mul(&PositiveFloat::new(f64::MAX)?),
+            None
+        );
+
+        assert_eq!(
+            PositiveFloat::new(3_f64)?.saturating_mul(&PositiveFloat::new(4_f64)?),
+            PositiveFloat::new(12_f64)?
+        );
+        assert_eq!(
+            PositiveFloat::new(5_f64)?.saturating_mul(&PositiveFloat::new(2_f64)?),
+            PositiveFloat::new(10_f64)?
+        );
+        assert_eq!(
+            PositiveFloat::new(5_f64)?.saturating_mul(&PositiveFloat::new(f64::MAX)?),
+            PositiveFloat::new(f64::MAX)?
+        );
+
+        assert_eq!(
+            PositiveFloat::new(3_f64)?.checked_div(&PositiveFloat::new(4_f64)?),
+            Some(PositiveFloat::new(0.75)?)
+        );
+        assert_eq!(
+            PositiveFloat::new(5_f64)?.checked_div(&PositiveFloat::new(2_f64)?),
+            Some(PositiveFloat::new(2.5)?)
+        );
+        assert_eq!(
+            PositiveFloat::new(5_f64)?.checked_div(&PositiveFloat::new(0_f64)?),
+            None
+        );
+
+        assert_eq!(PositiveFloat::max_value(), PositiveFloat::MAX);
+        assert_eq!(PositiveFloat::min_value(), PositiveFloat::ZERO);
+
+        Ok(())
+    }
+}

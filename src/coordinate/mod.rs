@@ -8,6 +8,7 @@ use std::{
     ops::{Add, AddAssign, Index, IndexMut, Neg, Not, Sub, SubAssign},
 };
 
+use num_traits::Zero;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -324,6 +325,7 @@ impl<T> Coordinate<T> {
     }
 }
 
+/// Some "move" conversion function
 impl<T> Coordinate<T> {
     /// Get the [`Coordinate`] as a tuple
     #[inline]
@@ -341,6 +343,7 @@ impl<T> Coordinate<T> {
 }
 
 // ~const Drop
+/// Const conversion function using [`Copy`] as a bound on `T`.
 impl<T: Copy> Coordinate<T> {
     /// Get the [`Coordinate`] as a tuple.
     /// This is a const function.
@@ -537,11 +540,25 @@ impl<T: Default> From<Vec<T>> for Coordinate<T> {
     }
 }
 
+impl<T: Zero> Zero for Coordinate<T> {
+    #[inline]
+    fn zero() -> Self {
+        Self::new(T::zero(), T::zero())
+    }
+
+    #[inline]
+    fn is_zero(&self) -> bool {
+        self.iter().all(Zero::is_zero)
+    }
+}
+
 #[cfg(test)]
 mod test {
 
+    use num_traits::Zero;
+
     use super::{Axis2D, Coordinate};
-    use crate::error::NoneError;
+    use crate::{error::NoneError, PositiveFloat};
 
     #[test]
     fn axis_2d() {
@@ -573,5 +590,83 @@ mod test {
             Some(Axis2D::Vertical)
         );
         assert_eq!(Axis2D::next_back(Some(Axis2D::Vertical)), None);
+    }
+
+    #[test]
+    fn coord() {
+        let mut coord = Coordinate::new(0_usize, 1_usize);
+        assert_eq!(coord.get(Axis2D::Vertical), &0_usize);
+        assert_eq!(coord.get(Axis2D::Horizontal), &1_usize);
+        assert_eq!(coord.get_mut(Axis2D::Vertical), &mut 0_usize);
+        assert_eq!(coord.get_mut(Axis2D::Horizontal), &mut 1_usize);
+
+        assert_eq!(coord.as_tuple(), (&0_usize, &1_usize));
+        assert_eq!(coord.as_tuple_mut(), (&mut 0_usize, &mut 1_usize));
+        assert_eq!(coord.as_array(), [&0_usize, &1_usize]);
+        assert_eq!(coord.as_array_mut(), [&mut 0_usize, &mut 1_usize]);
+        assert_eq!(coord.into_tuple(), (0_usize, 1_usize));
+        assert_eq!(coord.into_array(), [0_usize, 1_usize]);
+        assert_eq!(coord.into_tuple_const(), (0_usize, 1_usize));
+        assert_eq!(coord.into_array_const(), [0_usize, 1_usize]);
+
+        assert_eq!(coord[0], 0_usize);
+        assert_eq!(coord[1], 1_usize);
+
+        coord[0] = 2_usize;
+        assert_eq!(coord[0], 2_usize);
+        coord[1] = 4_usize;
+        assert_eq!(coord[1], 4_usize);
+        coord[Axis2D::Vertical] = 3_usize;
+        assert_eq!(coord[Axis2D::Vertical], 3_usize);
+        coord[Axis2D::Horizontal] = 6_usize;
+        assert_eq!(coord[Axis2D::Horizontal], 6_usize);
+    }
+
+    #[test]
+    fn coord_conversion() {
+        let coord = Coordinate::new(0_usize, 1_usize);
+
+        assert_eq!(Coordinate::from((0_usize, 1_usize)), coord);
+        assert_eq!(
+            <Coordinate<usize> as Into<(usize, usize)>>::into(coord),
+            (0, 1)
+        );
+        assert_eq!(Coordinate::from([0, 1]), coord);
+        assert_eq!(<Coordinate<usize> as Into<[usize; 2]>>::into(coord), [0, 1]);
+
+        let array = [0_usize, 1_usize];
+        assert_eq!(<Coordinate<usize> as From<&[usize]>>::from(&array), coord);
+        assert_eq!(Coordinate::from(array.to_vec()), coord);
+        let array = [4_usize];
+        assert_eq!(
+            <Coordinate<usize> as From<&[usize]>>::from(&array),
+            Coordinate::new(4_usize, 0_usize)
+        );
+        assert_eq!(
+            Coordinate::from(array.to_vec()),
+            Coordinate::new(4_usize, 0_usize)
+        );
+    }
+
+    #[test]
+    fn coord_math() {
+        let mut c1 = Coordinate::new(3_i32, -5_i32);
+        let c2 = Coordinate::new(1_i32, 0_i32);
+        let c3 = Coordinate::new(4_i32, -5_i32);
+        c1 += c2;
+
+        assert_eq!(c1, c3);
+
+        c1 -= c2;
+
+        assert_eq!(c1, Coordinate::new(3_i32, -5_i32));
+
+        assert_eq!(c1 + c2, c3);
+        assert_eq!(-c1 - c2, -c3);
+
+        assert!(Coordinate::<i32>::zero().is_zero());
+        assert_eq!(Coordinate::zero(), Coordinate::new(0_i32, 0_i32));
+        assert!(Coordinate::<f64>::zero().is_zero());
+        assert!(Coordinate::<PositiveFloat>::zero().is_zero());
     }
 }

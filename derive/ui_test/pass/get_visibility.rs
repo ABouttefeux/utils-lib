@@ -14,8 +14,8 @@ mod name {
     pub struct S2 {
         //#[get(pub(crate))]
         //#[get(visibility = "pub(super)")]
-        #[get(public)]
-        #[get_mut(public)]
+        #[get(visibility(public))]
+        #[get_mut(Visibility = "public")]
         pub f: usize,
     }
 }
