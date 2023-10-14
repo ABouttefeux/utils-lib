@@ -7,7 +7,7 @@ use quote::{quote, ToTokens};
 use syn::{Expr, ExprLit, Lit, MetaNameValue};
 
 use super::{
-    attribute_option::ParseOptionUtils,
+    attribute_option::{get_string_literal, ParseOptionUtils},
     error::{AcceptableParseError, ParseAttributeOptionError, UnacceptableParseError},
 };
 
@@ -74,13 +74,13 @@ impl ParseOptionUtils for ConstTy {
                 ..
             }) = &name_value.value
             {
-                if lit_bool.value() {
-                    Ok(Self::Constant)
-                } else {
-                    Ok(Self::NonConstant)
-                }
+                Ok(lit_bool.value().into())
             } else {
-                Err(UnacceptableParseError::RightHandValueInvalid.into())
+                // this is the default behavior, see [`ParseOptionUtils::parse_name_value`]
+                let string = get_string_literal(&name_value.value)
+                    .ok_or(UnacceptableParseError::RightHandNameValueExprNotLitString)?;
+                Self::parse_option_from_str_assignment(&string)
+                    .ok_or_else(|| UnacceptableParseError::RightHandValueInvalid.into())
             }
         } else {
             Err(AcceptableParseError::LeftHandSideValueNotRecognized.into())
@@ -137,5 +137,25 @@ impl AsRef<bool> for ConstTy {
             Self::Constant => &true,
             Self::NonConstant => &false,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::ConstTy;
+
+    #[test]
+    fn const_ty() {
+        assert_eq!(ConstTy::from(true), ConstTy::Constant);
+        assert_eq!(ConstTy::from(false), ConstTy::NonConstant);
+
+        assert!(bool::from(ConstTy::Constant));
+        assert!(!bool::from(ConstTy::NonConstant));
+
+        assert!(bool::from(ConstTy::from(true)));
+        assert!(!bool::from(ConstTy::from(false)));
+
+        assert_eq!(ConstTy::Constant.as_ref(), &true);
+        assert_eq!(ConstTy::NonConstant.as_ref(), &false);
     }
 }

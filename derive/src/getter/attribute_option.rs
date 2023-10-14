@@ -107,7 +107,7 @@ pub trait ParseOptionUtils: Sized {
 ///
 /// It is very specific but it is used to encapsulate code to parse option
 #[must_use]
-fn get_string_literal(expr: &Expr) -> Option<String> {
+pub fn get_string_literal(expr: &Expr) -> Option<String> {
     if let Expr::Lit(ExprLit {
         lit: Lit::Str(ref lit_string),
         ..

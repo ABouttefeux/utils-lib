@@ -119,8 +119,9 @@ impl GetterOption {
         }
 
         let out = out.ok_or(OptionParseError::NotFound)?;
-        let getter_option = Self::new(FieldInformation::from_field(field), out);
+        // the error is an unreachable state
 
+        let getter_option = Self::new(FieldInformation::from_field(field), out);
         getter_option.validate()?;
         Ok(getter_option)
     }

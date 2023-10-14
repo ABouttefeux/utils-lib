@@ -35,18 +35,20 @@ fn main() {
 ```rust
 use utils_lib_derive::{trait_sealed, Sealed};
 
-// this define a module named `private` with a trait named `Sealed`
-// without method
+// this create a module named [`private`] with a trait named [`Sealed`]
+// without method inside that module.
 trait_sealed!();
 
 #[derive(Sealed)]
 struct S;
 
-// this trait cannot be implemented outside this crate
-// as `private::Sealed` is private
+/// this trait is sealed and cannot me implemented outside of this crate
+/// because [`Sealed`] is a private trait that can't be implemented outside
+/// of this crate.
 pub trait Trait: private::Sealed {}
 
 impl Trait for S {}
 
 fn main() {}
 ```
+[See more example](https://github.com/ABouttefeux/utils-lib/tree/main/derive/examples)

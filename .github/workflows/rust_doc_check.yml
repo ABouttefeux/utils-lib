@@ -1,6 +1,6 @@
 name: Rust Doc check
 
-on: [push, pull_request]
+on: [push]
 
 env:
   CARGO_TERM_COLOR: always

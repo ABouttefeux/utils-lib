@@ -132,9 +132,6 @@ impl NumCast for PositiveFloat {
 impl Pow<Self> for PositiveFloat {
     type Output = Self;
 
-    // TODO
-
-    #[cfg(debug_assertions)]
     #[inline]
     fn pow(self, rhs: Self) -> Self::Output {
         self.pow(rhs.float())
@@ -328,9 +325,13 @@ mod test {
             PositiveFloat::new(0.25_f64)?
         );
 
-        assert_eq!(
-            ZeroOneBoundedFloat::new(0.5_f64)?.pow(ZeroOneBoundedFloat::new(0.5_f64)?),
-            ZeroOneBoundedFloat::new(0.5_f64.sqrt())?
+        assert!(
+            (ZeroOneBoundedFloat::new(0.5_f64)?
+                .pow(ZeroOneBoundedFloat::new(0.5_f64)?)
+                .float()
+                - ZeroOneBoundedFloat::new(0.5_f64.sqrt())?.float())
+            .abs()
+                < 1E-15_f64
         );
 
         Ok(())

@@ -13,9 +13,8 @@ mod name {
     #[derive(Getter, Clone, Copy)]
     pub struct S2 {
         //#[get(pub(crate))]
-        //#[get(visibility = "pub(super)")]
-        #[get(visibility(public))]
-        #[get_mut(Visibility = "public")]
+        #[get(visibility = "pub(super)")]
+        #[get_mut(Visibility(public))]
         pub f: usize,
     }
 }

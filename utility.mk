@@ -32,7 +32,7 @@ else
     ln := ln
     ln_flag := -s -r -d
     dylib_extention := so
-    exec_extension := # TODO
+    exec_extension := x86_64s
 endif
 
 mkdir = mkdir

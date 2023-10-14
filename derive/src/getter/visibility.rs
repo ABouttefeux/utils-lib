@@ -31,32 +31,6 @@ impl Visibility {
     /// visibility =
     const VISIBILITY_LEFT_HAND: &'static str = "visibility";
 
-    // /// Try to parse a [`Visibility`] option from a [`Meta`]
-    // #[inline]
-    // pub fn visibility_option(option: &Meta) -> Option<Self> {
-    //     match option {
-    //         Meta::Path(path) => Self::visibility_from_path(path),
-    //         Meta::NameValue(name_value) => Self::visibility_from_name_value(name_value),
-    //         // FIX ME
-    //         Meta::List(meta_list) => {
-    //             if meta_list.path.is_ident(Self::VISIBILITY_LEFT_HAND) {
-    //                 meta_list.parse_args::<Ident>().map_or(None, |ident| {
-    //                     Self::visibility_from_path_str(&ident.to_string())
-    //                 })
-    //             } else {
-    //                 None
-    //             }
-    //         }
-    //     }
-    // }
-
-    // /// Try parse a [`Visibility`] from a [`Path`] as the modifier
-    // #[inline]
-    // fn visibility_from_path(path: &Path) -> Option<Self> {
-    //     path.get_ident()
-    //         .and_then(|ident| Self::visibility_from_path_str(&ident.to_string()))
-    // }
-
     // TODO
     /// Try parse a a [`Visibility`] from a `&str` as the modifier
     #[inline]
@@ -77,24 +51,6 @@ impl Visibility {
 
         None
     }
-
-    // /// Try parse a a [`Visibility`] from a [`MetaNameValue`]
-    // #[inline]
-    // fn visibility_from_name_value(name_value: &MetaNameValue) -> Option<Self> {
-    //     if name_value.path.is_ident(Self::VISIBILITY_LEFT_HAND) {
-    //         if let Expr::Lit(ExprLit {
-    //             lit: Lit::Str(ref lit_string),
-    //             ..
-    //         }) = &name_value.value
-    //         {
-    //             Self::visibility_from_path_str(&lit_string.value())
-    //         } else {
-    //             None
-    //         }
-    //     } else {
-    //         None
-    //     }
-    // }
 }
 
 impl Visibility {

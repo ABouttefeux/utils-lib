@@ -4,6 +4,9 @@ use utils_lib_derive::Getter;
 struct Zst;
 
 #[derive(Getter)]
+struct NoGet {}
+
+#[derive(Getter)]
 struct Wrapper(
     #[get]
     #[get_mut]

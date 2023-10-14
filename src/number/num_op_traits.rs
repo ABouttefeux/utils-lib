@@ -28,7 +28,7 @@ impl MulAssign<ZeroOneBoundedFloat> for PositiveFloat {
     #[cfg(not(debug_assertions))]
     #[inline]
     fn mul_assign(&mut self, rhs: ZeroOneBoundedFloat) {
-        *self = Self::new_or_bounded(self.float() * rhs.float())
+        *self = Self::new_or_bounded(self.float() * rhs.float());
     }
 }
 

@@ -25,6 +25,8 @@ use self::option::{GetterOption, ImmutableGetterOption, MutableGetterOption};
 use self::visibility::Visibility;
 
 // TODO share option for both
+// TODO multiple error reporting on #[get] #[get_mut]
+// TODO vec so more than one #[get] and #[get_mut] can be added
 
 /// Derive getter macro. see [`crate::derive_getter`]
 #[inline]

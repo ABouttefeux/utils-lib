@@ -106,42 +106,6 @@ impl GetterTy {
     }
 }
 
-// impl AttributeOptionParse for GetterTy {
-//     #[inline]
-//     fn parse_option(option: &Meta) -> Option<Self> {
-//         match option {
-//             Meta::Path(path) => Self::parse_path(path),
-//             Meta::NameValue(name_value) => {
-//                 //
-//                 let ident = name_value.path.get_ident()?;
-//                 if Self::left_hand_path_accepted(&ident.to_string()) {
-//                     if let Expr::Lit(ExprLit {
-//                         lit: Lit::Str(ref lit_string),
-//                         ..
-//                     }) = &name_value.value
-//                     {
-//                         Self::parse_string(&lit_string.value())
-//                     } else {
-//                         None
-//                     }
-//                 } else {
-//                     None
-//                 }
-//             }
-//             Meta::List(meta_list) => {
-//                 let ident = meta_list.path.get_ident()?;
-//                 if Self::left_hand_path_accepted(&ident.to_string()) {
-//                     meta_list
-//                         .parse_args::<Ident>()
-//                         .map_or(None, |ident| Self::parse_string(&ident.to_string()))
-//                 } else {
-//                     None
-//                 }
-//             }
-//         }
-//     }
-// }
-
 impl ParseOptionUtils for GetterTy {
     #[inline]
     fn parse_option_from_str(path: &str) -> Option<Self> {

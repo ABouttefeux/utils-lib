@@ -31,7 +31,6 @@ pub enum SelfTy {
     Ref,
     /// TODO
     /// ```
-    /// # #[derive(Copy, Clone)]
     /// # struct S {
     /// #   field: u32,
     /// # }
@@ -42,7 +41,7 @@ pub enum SelfTy {
     /// }
     /// # }
     /// ```
-    /// works only for Self type that implements [`Copy`].
+    /// It is recommended only for Self type that implements [`Copy`] and is smaller than a word.
     Value,
 }
 
@@ -57,14 +56,16 @@ impl SelfTy {
 }
 
 impl ParseOptionUtils for SelfTy {
-    fn parse_option_from_str(path: &str) -> Option<Self> {
-        if path == "self" {
-            Some(Self::Value)
-        } else if path == "&self" {
-            Some(Self::Ref)
-        } else {
-            None
-        }
+    fn parse_option_from_str(_path: &str) -> Option<Self> {
+        // non working self, &self syntax
+        // if path == "self" {
+        //     Some(Self::Value)
+        // } else if path == "&self" {
+        //     Some(Self::Ref)
+        // } else {
+        //     None
+        // }
+        None
     }
 
     fn parse_option_from_str_assignment(path: &str) -> Option<Self> {
