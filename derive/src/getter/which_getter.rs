@@ -1,4 +1,5 @@
-//! Contains [`WhichGetter`]
+//! Contains [`WhichGetter`], a type which enumerate between
+//! [`ImmutableGetterOption`] and [`MutableGetterOption`].
 
 use macro_utils::field::FieldInformation;
 use proc_macro2::TokenStream as TokenStream2;

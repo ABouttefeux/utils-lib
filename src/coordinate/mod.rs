@@ -1,11 +1,15 @@
 //! Module containing [`Coordinate`] a 2d coordinate and [`Axis2D`] an enumeration
 //! of the x and y axis.
 
+mod axis_2d;
 mod iterator;
 
 use std::{
+    fmt::{
+        self, Binary, Display, Formatter, LowerExp, LowerHex, Octal, Pointer, UpperExp, UpperHex,
+    },
     iter::FusedIterator,
-    ops::{Add, AddAssign, Index, IndexMut, Neg, Not, Sub, SubAssign},
+    ops::{Add, AddAssign, Index, IndexMut, Neg, Sub, SubAssign},
 };
 
 use num_traits::Zero;
@@ -13,190 +17,9 @@ use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 
 #[allow(clippy::module_name_repetitions)]
-pub use self::iterator::CoordinateIterator;
-use crate::{error::NoneError, number::abs_diff};
-
-/// Represent the Axis in 2 dimensions. It can be either in the `x` direction i.e. [`Self::Vertical`]
-/// or the `y` direction, i.e. [`Self::Horizontal`].
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[allow(clippy::exhaustive_enums)] // reason = "no more variant possible"
-pub enum Axis2D {
-    /// X axis
-    #[default]
-    Vertical,
-    /// Y Axis
-    Horizontal,
-}
-
-impl Axis2D {
-    /// All the possible axis
-    pub const AXIS: [Self; 2] = [Self::Vertical, Self::Horizontal];
-
-    /// Convert an index into an [`Axis2D`]
-    ///
-    /// # Example
-    /// ```
-    /// use utils_lib::coordinate::Axis2D;
-    ///
-    /// assert_eq!(Axis2D::from_index(0), Some(Axis2D::Vertical));
-    /// assert_eq!(Axis2D::from_index(1), Some(Axis2D::Horizontal));
-    /// assert_eq!(Axis2D::from_index(2), None);
-    /// assert_eq!(Axis2D::from_index(3), None);
-    /// //...
-    /// ```
-    #[inline]
-    #[must_use]
-    pub const fn from_index(index: usize) -> Option<Self> {
-        match index {
-            0 => Some(Self::Vertical),
-            1 => Some(Self::Horizontal),
-            _ => None,
-        }
-    }
-
-    /// Convert an [`Axis2D`] into an index
-    ///
-    /// # Example
-    /// ```
-    /// use utils_lib::coordinate::Axis2D;
-    ///
-    /// assert_eq!(Axis2D::Vertical.to_index(), 0);
-    /// assert_eq!(Axis2D::Horizontal.to_index(), 1);
-    /// ```
-    #[inline]
-    #[must_use]
-    pub const fn to_index(self) -> usize {
-        match self {
-            Self::Vertical => 0,
-            Self::Horizontal => 1,
-        }
-    }
-
-    /// Convert an [`Axis2D`] as an index
-    ///
-    /// # Example
-    /// ```
-    /// use utils_lib::coordinate::Axis2D;
-    ///
-    /// assert_eq!(Axis2D::Vertical.as_index(), &0);
-    /// assert_eq!(Axis2D::Horizontal.as_index(), &1);
-    /// ```
-    #[inline]
-    #[must_use]
-    pub const fn as_index(self) -> &'static usize {
-        match self {
-            Self::Vertical => &0,
-            Self::Horizontal => &1,
-        }
-    }
-
-    /// Get the perpendicular axis
-    ///
-    /// # Example
-    /// ```
-    /// use utils_lib::coordinate::Axis2D;
-    ///
-    /// assert_eq!(Axis2D::Vertical.perpendicular(), Axis2D::Horizontal);
-    /// assert_eq!(Axis2D::Horizontal.perpendicular(), Axis2D::Vertical);
-    /// ```
-    #[inline]
-    #[must_use]
-    pub const fn perpendicular(self) -> Self {
-        match self {
-            Self::Vertical => Self::Horizontal,
-            Self::Horizontal => Self::Vertical,
-        }
-    }
-
-    /// Convert an [`Axis2D`] into a cardinal direction in the form of a [`Coordinate::<usize>`]
-    ///
-    /// # Example
-    /// ```
-    /// use utils_lib::coordinate::{Axis2D, Coordinate};
-    ///
-    /// assert_eq!(Axis2D::Vertical.coordinate_usize(), Coordinate::new(1, 0));
-    /// assert_eq!(Axis2D::Horizontal.coordinate_usize(), Coordinate::new(0, 1));
-    /// ```
-    #[inline]
-    #[must_use]
-    pub const fn coordinate_usize(self) -> Coordinate<usize> {
-        match self {
-            Self::Vertical => Coordinate::new(1, 0),
-            Self::Horizontal => Coordinate::new(0, 1),
-        }
-    }
-}
-
-/// private functions for iterator
-impl Axis2D {
-    /// gives the next index when use to index the front of [`CoordinateIterator`]
-    const fn next(self) -> Option<Self> {
-        match self {
-            Self::Vertical => Some(Self::Horizontal),
-            Self::Horizontal => None,
-        }
-    }
-
-    /// gives the previous index when use to index the back of [`CoordinateIterator`]
-    const fn next_back(val: Option<Self>) -> Option<Self> {
-        match val {
-            Some(Self::Vertical) => None,
-            Some(Self::Horizontal) => Some(Self::Vertical),
-            None => Some(Self::Horizontal),
-        }
-    }
-
-    /// gives the size hint for the index that should be used as `back - front`
-    const fn size_hint(val: Option<Self>) -> usize {
-        match val {
-            Some(axis) => axis.to_index(),
-            None => 2_usize,
-        }
-    }
-}
-
-impl Not for Axis2D {
-    type Output = Self;
-
-    #[inline]
-    fn not(self) -> Self::Output {
-        self.perpendicular()
-    }
-}
-
-impl From<Axis2D> for usize {
-    #[inline]
-    fn from(value: Axis2D) -> Self {
-        value.to_index()
-    }
-}
-
-impl From<Axis2D> for Coordinate<usize> {
-    #[inline]
-    fn from(value: Axis2D) -> Self {
-        value.coordinate_usize()
-    }
-}
-
-impl TryFrom<usize> for Axis2D {
-    // TODO
-    type Error = NoneError;
-
-    #[inline]
-    fn try_from(value: usize) -> Result<Self, Self::Error> {
-        Self::from_index(value).ok_or(NoneError)
-    }
-}
-
-impl AsRef<usize> for Axis2D {
-    #[inline]
-    fn as_ref(&self) -> &usize {
-        self.as_index()
-    }
-}
-
-// TODO conversion Coord
+#[doc(inline)]
+pub use self::{axis_2d::Axis2D, iterator::CoordinateIterator};
+use crate::number::abs_diff;
 
 /// A two dimensional vector.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
@@ -398,6 +221,9 @@ where
     }
 }
 
+//----------------------------------
+// index operation
+
 impl<T> Index<Axis2D> for Coordinate<T> {
     type Output = T;
 
@@ -442,6 +268,9 @@ impl<T> IndexMut<usize> for Coordinate<T> {
 //     }
 // }
 
+//----------------------------------
+// num operation
+
 impl<T: AddAssign<T2>, T2> AddAssign<Coordinate<T2>> for Coordinate<T> {
     #[inline]
     fn add_assign(&mut self, rhs: Coordinate<T2>) {
@@ -484,6 +313,21 @@ impl<T: Neg<Output = T2>, T2> Neg for Coordinate<T> {
         Coordinate::new(-self.x, -self.y)
     }
 }
+
+impl<T: Zero> Zero for Coordinate<T> {
+    #[inline]
+    fn zero() -> Self {
+        Self::new(T::zero(), T::zero())
+    }
+
+    #[inline]
+    fn is_zero(&self) -> bool {
+        self.iter().all(Zero::is_zero)
+    }
+}
+
+//----------------------------------
+// conversion
 
 impl<T> From<Coordinate<T>> for (T, T) {
     #[inline]
@@ -540,17 +384,33 @@ impl<T: Default> From<Vec<T>> for Coordinate<T> {
     }
 }
 
-impl<T: Zero> Zero for Coordinate<T> {
-    #[inline]
-    fn zero() -> Self {
-        Self::new(T::zero(), T::zero())
-    }
+//----------------------------------
+// format
 
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.iter().all(Zero::is_zero)
-    }
+/// implement a [`fmt`] trait for [`Coordinate`]
+macro_rules! impl_fmt_coord {
+    ($trait:path) => {
+        impl<T: $trait> $trait for Coordinate<T> {
+            #[inline]
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                write!(f, "[")?;
+                <T as $trait>::fmt(self.x(), f)?;
+                write!(f, ", ")?;
+                <T as $trait>::fmt(self.y(), f)?;
+                write!(f, "]")
+            }
+        }
+    };
 }
+
+impl_fmt_coord!(Display);
+impl_fmt_coord!(Octal);
+impl_fmt_coord!(LowerHex);
+impl_fmt_coord!(UpperHex);
+impl_fmt_coord!(Pointer);
+impl_fmt_coord!(Binary);
+impl_fmt_coord!(LowerExp);
+impl_fmt_coord!(UpperExp);
 
 #[cfg(test)]
 mod test {
@@ -577,19 +437,6 @@ mod test {
 
         assert_eq!(Axis2D::try_from(2_usize), Err(NoneError));
         assert_eq!(Axis2D::try_from(1_usize), Ok(Axis2D::Horizontal));
-    }
-
-    #[test]
-    fn axis_2d_iter() {
-        assert_eq!(Axis2D::Vertical.next(), Some(Axis2D::Horizontal));
-        assert_eq!(Axis2D::Horizontal.next(), None);
-
-        assert_eq!(Axis2D::next_back(None), Some(Axis2D::Horizontal));
-        assert_eq!(
-            Axis2D::next_back(Some(Axis2D::Horizontal)),
-            Some(Axis2D::Vertical)
-        );
-        assert_eq!(Axis2D::next_back(Some(Axis2D::Vertical)), None);
     }
 
     #[test]
@@ -668,5 +515,44 @@ mod test {
         assert_eq!(Coordinate::zero(), Coordinate::new(0_i32, 0_i32));
         assert!(Coordinate::<f64>::zero().is_zero());
         assert!(Coordinate::<PositiveFloat>::zero().is_zero());
+    }
+
+    #[test]
+    fn fmt() {
+        assert_eq!(Coordinate::new(4_u32, 1053_u32).to_string(), "[4, 1053]");
+        assert_eq!(
+            format!("{:o}", Coordinate::new(0o1241_u16, 0o6761_u16)),
+            "[1241, 6761]"
+        );
+        assert_eq!(
+            format!("{:x}", Coordinate::new(0x21_u8, 0xf6_u8)),
+            "[21, f6]"
+        );
+        assert_eq!(
+            format!("{:X}", Coordinate::new(0x21_u8, 0xf6_u8)),
+            "[21, F6]"
+        );
+
+        let x = 1_i32;
+        let y = 2_i32;
+        let c = Coordinate::new(&x, &y);
+        assert_eq!(format!("{c:p}"), format!("[{:p}, {:p}]", &x, &y));
+
+        assert_eq!(
+            format!("{:b}", Coordinate::new(0b_0011_1111, 0b_1100_0000_u8)),
+            "[111111, 11000000]"
+        );
+        assert_eq!(
+            format!("{:e}", Coordinate::new(1.4e+5_f64, 6.7e-6_f64)),
+            "[1.4e5, 6.7e-6]"
+        );
+        assert_eq!(
+            format!("{:E}", Coordinate::new(1.4E+5_f64, 6.7E-6_f64)),
+            "[1.4E5, 6.7E-6]"
+        );
+        assert_eq!(
+            format!("{:.1}", Coordinate::new(1.44_f64, 6.78_f64)),
+            "[1.4, 6.8]"
+        );
     }
 }

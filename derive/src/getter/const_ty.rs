@@ -1,5 +1,5 @@
-//! Contains [`ConstTy`]
-
+//! Contains [`ConstTy`], the attribute option that determine if the getter is
+//! a const function
 use std::fmt::{self, Display};
 
 use proc_macro2::TokenStream as TokenStream2;
@@ -20,6 +20,7 @@ use super::{
 /// - constant
 /// - Constant
 /// - Const = true/false
+/// - Const = "true"/"false"
 /// - Const(true/false)
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
 pub enum ConstTy {
@@ -38,6 +39,12 @@ impl ConstTy {
             Self::Constant => quote! {const},
             Self::NonConstant => quote! {},
         }
+    }
+}
+
+impl ToTokens for ConstTy {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        tokens.extend(self.quote());
     }
 }
 
@@ -66,7 +73,7 @@ impl ParseOptionUtils for ConstTy {
             &name_value
                 .path
                 .get_ident()
-                .ok_or(UnacceptableParseError::LeftHandSideValuePathIsNotIdent)?
+                .ok_or(UnacceptableParseError::LeftHandSideValueNotIdent)?
                 .to_string(),
         ) {
             if let Expr::Lit(ExprLit {
@@ -90,12 +97,6 @@ impl ParseOptionUtils for ConstTy {
     #[inline]
     fn left_hand_path_accepted(path: &str) -> bool {
         path == "const" || path == "Const" || path == "constant" || path == "Constant"
-    }
-}
-
-impl ToTokens for ConstTy {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        tokens.extend(self.quote());
     }
 }
 

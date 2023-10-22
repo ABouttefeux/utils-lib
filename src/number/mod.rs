@@ -8,7 +8,7 @@ pub mod zero_one_bounded_float;
 
 use std::{
     cmp::Ordering,
-    fmt::{self, Display},
+    fmt::{self, Display, LowerExp, UpperExp},
     num::FpCategory,
     ops::{Deref, DerefMut},
 };
@@ -37,7 +37,8 @@ pub trait Validation {
 
 //-----------------------------------
 
-/// A structure created by [`PositiveFloat::float_mut`], it can be [`DerefMut`] as an `&mut f64`.
+/// A structure created by [`PositiveFloat::float_mut`], it can be [`DerefMut`]
+/// as an `&mut f64`.
 /// It ensure data validation on [`Drop`]. If the data is not valid it is set to 0.
 ///
 /// We voluntarily do not have a new function. The guard is build by the wrapper.
@@ -117,7 +118,31 @@ impl<'a, T: Validation + ?Sized> Drop for ValidationGuard<'a, T> {
 impl<'a, T: Validation + ?Sized> Display for ValidationGuard<'a, T> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.float)?;
+        <f64 as Display>::fmt(self.float(), f)?;
+        if T::validate_data(self.float) {
+            Ok(())
+        } else {
+            write!(f, " (not valid)")
+        }
+    }
+}
+
+impl<'a, T: Validation + ?Sized> UpperExp for ValidationGuard<'a, T> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        <f64 as UpperExp>::fmt(self.float(), f)?;
+        if T::validate_data(self.float) {
+            Ok(())
+        } else {
+            write!(f, " (not valid)")
+        }
+    }
+}
+
+impl<'a, T: Validation + ?Sized> LowerExp for ValidationGuard<'a, T> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        <f64 as LowerExp>::fmt(self.float(), f)?;
         if T::validate_data(self.float) {
             Ok(())
         } else {
@@ -209,7 +234,7 @@ fn compare_f64(first: f64, other: f64) -> Ordering {
 mod test {
     use std::cmp::Ordering;
 
-    use super::compare_f64;
+    use super::{compare_f64, PositiveFloatConversionError};
     use crate::{PositiveFloat, ZeroOneBoundedFloat};
 
     #[test]
@@ -282,7 +307,7 @@ mod test {
 
     #[allow(clippy::float_cmp)]
     #[test]
-    fn validation_guard_conversion() {
+    fn validation_guard_conversion() -> Result<(), PositiveFloatConversionError> {
         let mut p = PositiveFloat::ZERO;
         let mut guard = p.float_mut();
 
@@ -307,5 +332,23 @@ mod test {
         assert_eq!(format!("{guard}"), "2 (not valid)".to_owned());
         *guard = f64::NAN;
         assert_eq!(format!("{guard}"), "NaN (not valid)".to_owned());
+
+        let mut p = PositiveFloat::new(0.123_456_f64)?;
+        let mut guard = p.float_mut();
+
+        assert_eq!(format!("{guard}"), "0.123456");
+        assert_eq!(format!("{guard:e}"), "1.23456e-1");
+        assert_eq!(format!("{guard:E}"), "1.23456E-1");
+        assert_eq!(format!("{guard:.1}"), "0.1");
+        assert_eq!(format!("{guard:.2}"), "0.12");
+
+        *guard = -1.234_56E+10_f64;
+        assert_eq!(format!("{guard}"), "-12345600000 (not valid)");
+        assert_eq!(format!("{guard:e}"), "-1.23456e10 (not valid)");
+        assert_eq!(format!("{guard:.1e}"), "-1.2e10 (not valid)");
+        assert_eq!(format!("{guard:E}"), "-1.23456E10 (not valid)");
+        assert_eq!(format!("{guard:.1E}"), "-1.2E10 (not valid)");
+
+        Ok(())
     }
 }

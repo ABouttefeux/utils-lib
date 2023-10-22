@@ -45,21 +45,21 @@ impl PartialOrd for PositiveFloat {
 impl Display for PositiveFloat {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.float())
+        <f64 as Display>::fmt(&self.float(), f)
     }
 }
 
 impl UpperExp for PositiveFloat {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:E}", self.float())
+        <f64 as UpperExp>::fmt(&self.float(), f)
     }
 }
 
 impl LowerExp for PositiveFloat {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:e}", self.float())
+        <f64 as LowerExp>::fmt(&self.float(), f)
     }
 }
 
@@ -82,7 +82,7 @@ impl Deref for PositiveFloat {
 
 /// represent in which range a [`f64`] can be respectively to the bounds of
 /// [`PositiveFloat`]
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default, Hash)]
 enum BoundRange {
     /// [`f64::INFINITY`]
     UpperBound,
@@ -267,13 +267,17 @@ impl PositiveFloat {
     /// # use utils_lib::error::NoneError;
     ///
     /// # fn main() -> Result<(), NoneError> {
-    /// assert_eq!(
-    ///     PositiveFloat::new_or_default(f64::INFINITY),
-    ///     PositiveFloat::ZERO
-    /// );
+    /// assert_eq!(PositiveFloat::new_or_bounded(0.5_f64).float(), 0.5_f64);
+    /// assert_eq!(PositiveFloat::new_or_bounded(-0.5_f64), PositiveFloat::ZERO);
+    /// assert_eq!(PositiveFloat::new_or_bounded(f64::NAN), PositiveFloat::ZERO);
     /// assert_eq!(
     ///     PositiveFloat::new_or_bounded(f64::INFINITY),
     ///     PositiveFloat::MAX
+    /// );
+    /// // PositiveFloat::new_or_default instead return 0
+    /// assert_eq!(
+    ///     PositiveFloat::new_or_default(f64::INFINITY),
+    ///     PositiveFloat::ZERO
     /// );
     /// # Ok(())
     /// # }
@@ -296,7 +300,7 @@ impl PositiveFloat {
         self.0
     }
 
-    /// Returns a way to mut the underlying float. If the final value is not valid,
+    /// Returns a way to mutate the underlying float. If the final value is not valid,
     /// It is set to 0 or to [`f64::MAX`] if the value is infinity. See [`ValidationGuard`].
     #[inline]
     #[must_use]
@@ -546,6 +550,34 @@ mod test {
         assert_eq!(p1.saturating_sub(p2), PositiveFloat::new(0_f64)?);
         assert_eq!(p2.saturating_sub(p1), PositiveFloat::new(1_f64)?);
 
+        Ok(())
+    }
+
+    #[test]
+    fn fmt() -> Result<(), ConversionError> {
+        assert_eq!(format!("{}", PositiveFloat::new(1.234_56_f64)?), "1.23456");
+        assert_eq!(format!("{:.1}", PositiveFloat::new(1.234_56_f64)?), "1.2");
+        assert_eq!(format!("{:.2}", PositiveFloat::new(1.234_56_f64)?), "1.23");
+        assert_eq!(
+            format!("{:8}", PositiveFloat::new(1.234_56_f64)?),
+            " 1.23456"
+        );
+        assert_eq!(
+            format!("{:E}", PositiveFloat::new(1.234_56E+10_f64)?),
+            "1.23456E10"
+        );
+        assert_eq!(
+            format!("{:.1E}", PositiveFloat::new(1.234_56E+10_f64)?),
+            "1.2E10"
+        );
+        assert_eq!(
+            format!("{:e}", PositiveFloat::new(1.234_56e+10_f64)?),
+            "1.23456e10"
+        );
+        assert_eq!(
+            format!("{:.1e}", PositiveFloat::new(1.234_56e+10_f64)?),
+            "1.2e10"
+        );
         Ok(())
     }
 }

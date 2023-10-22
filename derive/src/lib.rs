@@ -135,13 +135,32 @@ mod test;
 
 use proc_macro::TokenStream;
 
-//#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
-
 /// Derive the `Sealed` trait
 ///
 /// # Panic
 ///
 /// panic if the derive macro is not applied to an struct, enum or union
+///
+/// # Example
+///
+/// ```
+/// use utils_lib_derive::{trait_sealed, Sealed};
+///
+/// // this create a module named [`private`] with a trait named [`Sealed`]
+/// // without method inside that module.
+/// trait_sealed!();
+///
+/// #[derive(Sealed)]
+/// struct S;
+///
+/// // this trait is sealed and cannot me implemented outside of this crate
+/// // because [`Sealed`] is a private trait that can't be implemented outside
+/// // of this crate.
+/// pub trait Trait: private::Sealed {}
+///
+/// impl Trait for S {}
+/// # fn main() {}
+/// ```
 #[inline]
 #[must_use]
 #[proc_macro_derive(Sealed)]
@@ -150,6 +169,27 @@ pub fn derive_sealed(item: TokenStream) -> TokenStream {
 }
 
 /// Creates a trait `Sealed` into a private module `private`.
+///
+/// # Example
+///
+/// ```
+/// use utils_lib_derive::{trait_sealed, Sealed};
+///
+/// // this create a module named [`private`] with a trait named [`Sealed`]
+/// // without method inside that module.
+/// trait_sealed!();
+///
+/// #[derive(Sealed)]
+/// struct S;
+///
+/// // this trait is sealed and cannot me implemented outside of this crate
+/// // because [`Sealed`] is a private trait that can't be implemented outside
+/// // of this crate.
+/// pub trait Trait: private::Sealed {}
+///
+/// impl Trait for S {}
+/// # fn main() {}
+/// ```
 #[inline]
 #[must_use]
 #[proc_macro]

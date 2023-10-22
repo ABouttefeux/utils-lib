@@ -6,7 +6,11 @@
 [![](https://img.shields.io/badge/doc-Read_Me-blueviolet)](https://abouttefeux.github.io/utils-lib/utils_lib_derive/index.html)
 [![codecov](https://codecov.io/gh/ABouttefeux/utils-lib/branch/develop/graph/badge.svg?token=mUFucbIHuh)](https://codecov.io/gh/ABouttefeux/utils-lib)
 
-Derive macro for getters and Sealed trait
+Derive macro for [`Getter`](https://abouttefeux.github.io/utils-lib/utils_lib/derive.Getter.html) and [`Sealed`](https://abouttefeux.github.io/utils-lib/utils_lib/derive.Sealed.html) trait.
+
+This crate won't be publish on crates.io. And I might introduce breaking change at anytime.
+For now I am not completely happy with the syntax of the [`Getter`](https://abouttefeux.github.io/utils-lib/utils_lib/derive.Getter.html) derive macro (but may require too much time for me). 
+I have also plan to add more derive macro in the future.
 
 # Example
 

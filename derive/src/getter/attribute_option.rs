@@ -1,5 +1,51 @@
 //! Contains the trait [`ParseOption`] and its helper trait [`ParseOptionUtils`]
 //! and [`ToCode`]
+//!
+//! [`ParseOptionUtils`] is an helper trait used to parse attribute options in
+//! `#[get]` and `#[get_mut]` attribute. More precisely if we would like to parse option
+//! like `#[get(visibility = "public")]` or just #[get(public)]. we would write
+//! ```
+//! # trait ParseOptionUtils: Sized {
+//! #     fn parse_option_from_str(path: &str) -> Option<Self>;
+//! #     fn parse_option_from_str_assignment(path: &str) -> Option<Self>;
+//! #     fn left_hand_path_accepted(path: &str) -> bool;
+//! # }
+//! #[derive(Default)]
+//! pub enum Visibility {
+//!     /// Public, pub modifier like `pub fn`.
+//!     Public,
+//!     #[default]
+//!     /// Private, no modifier like `fn`.
+//!     /// Default value
+//!     Private,
+//! }
+//!
+//! impl ParseOptionUtils for Visibility {
+//!     // this function look for standalone value like in `#[get(public)]`
+//!     fn parse_option_from_str(path: &str) -> Option<Self> {
+//!         if path == "public" {
+//!             Some(Self::Public)
+//!         } else if path == "private" {
+//!             Some(Self::Private)
+//!         } else {
+//!             None
+//!         }
+//!     }
+//!
+//!     // this looks for value in assignments or parenthesis like in
+//!     // `#[get(visibility(public))]` or `#[get(visibility = "public")]`
+//!     fn parse_option_from_str_assignment(path: &str) -> Option<Self> {
+//!         Self::parse_option_from_str(path)
+//!     }
+//!
+//!     // this is to determine the left hand side value in our case `visibility`
+//!     fn left_hand_path_accepted(path: &str) -> bool {
+//!         path == "visibility"
+//!     }
+//! }
+//! ```
+
+// TODO more explanation about the code.
 
 use macro_utils::field::FieldInformation;
 use proc_macro2::{Ident, TokenStream as TokenStream2};
@@ -12,17 +58,20 @@ use super::error::{AcceptableParseError, ParseAttributeOptionError, Unacceptable
 // TODO think about error
 
 /// trait for option element that are parsed from [`Meta`]
-#[allow(clippy::module_name_repetitions)] // TODO
 pub trait ParseOption: Sized {
     /// try to parse the option element from a [`Meta`] return [`Ok`] if the element is valid.
     ///
-    /// TODO error doc
+    /// # Error
+    /// see [`ParseAttributeOptionError`]
     fn parse_option(option: &Meta) -> Result<Self, ParseAttributeOptionError>;
 }
 
 /// trait for option element that are parsed from [`Meta`] providing default structure
 /// to implement [`ParseOption`] more easily
-#[allow(clippy::module_name_repetitions)] // TODO
+///
+/// # Example
+///
+/// see level module doc [`self`]
 pub trait ParseOptionUtils: Sized {
     /// Try parse the option from a string
     #[must_use]
@@ -55,8 +104,13 @@ pub trait ParseOptionUtils: Sized {
         Self::parse_option_from_str_assignment(&ident.to_string())
     }
 
-    /// try to parse the option element from a [`Meta`] return [`Some`] if the element is valid
-    /// [`None`] otherwise
+    /// Try to parse the option element from a [`Meta`] return [`Some`] if the element is valid
+    /// [`Err`] otherwise.
+    ///
+    /// This is meant to be called in [`ParseOption::parse_option`].
+    ///
+    /// # Error
+    /// see [`ParseAttributeOptionError`]
     fn parse_option_utils(option: &Meta) -> Result<Self, ParseAttributeOptionError> {
         match option {
             Meta::Path(path) => Self::parse_from_path(path)
@@ -66,13 +120,13 @@ pub trait ParseOptionUtils: Sized {
         }
     }
 
-    /// try parse the rule from a [`MetaNameValue`]
+    /// Try parse the rule from a [`MetaNameValue`].
     fn parse_name_value(name_value: &MetaNameValue) -> Result<Self, ParseAttributeOptionError> {
         if Self::left_hand_path_accepted(
             &name_value
                 .path
                 .get_ident()
-                .ok_or(UnacceptableParseError::LeftHandSideValuePathIsNotIdent)?
+                .ok_or(UnacceptableParseError::LeftHandSideValueNotIdent)?
                 .to_string(),
         ) {
             let string = get_string_literal(&name_value.value)
@@ -84,13 +138,13 @@ pub trait ParseOptionUtils: Sized {
         }
     }
 
-    /// try parse the rule from a [`MetaList`]
+    /// Try parse the rule from a [`MetaList`].
     fn parse_meta_list(meta_list: &MetaList) -> Result<Self, ParseAttributeOptionError> {
         if Self::left_hand_path_accepted(
             &meta_list
                 .path
                 .get_ident()
-                .ok_or(UnacceptableParseError::LeftHandSideValuePathIsNotIdent)?
+                .ok_or(UnacceptableParseError::LeftHandSideValueNotIdent)?
                 .to_string(),
         ) {
             // FIXE ME
@@ -103,9 +157,9 @@ pub trait ParseOptionUtils: Sized {
 }
 
 /// Get the [`String`] value of a [`Lit::Str`] from [`Expr`] if it were
-/// that particular expression.
+/// that particular expression. Otherwise returns [`None`].
 ///
-/// It is very specific but it is used to encapsulate code to parse option
+/// It is very specific but it is used to encapsulate code to parse option.
 #[must_use]
 pub fn get_string_literal(expr: &Expr) -> Option<String> {
     if let Expr::Lit(ExprLit {

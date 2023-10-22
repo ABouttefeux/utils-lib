@@ -8,7 +8,7 @@ use super::attribute_option::ParseOptionUtils;
 
 /// Visibility option
 ///
-/// ! #[get(pub)]!  or `#[get(visibility = pub)]`
+/// `#[get(pub)]`  or `#[get(visibility = pub)]`
 ///
 /// accepted option :
 /// - pub, public, crate, pub(...), private,

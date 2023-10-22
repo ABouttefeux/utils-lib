@@ -1,3 +1,5 @@
+// fail test for non const getter
+
 use utils_lib_derive::Getter;
 
 #[derive(Getter, Clone)]

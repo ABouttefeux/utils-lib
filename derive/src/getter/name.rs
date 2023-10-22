@@ -5,8 +5,6 @@ use proc_macro2::{Ident, Span};
 
 use super::attribute_option::ParseOptionUtils;
 
-// TODO rename to name
-
 /// optional name of the getter
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]

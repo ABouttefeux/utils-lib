@@ -12,9 +12,6 @@ use syn::{parse_macro_input, DeriveInput};
 #[inline]
 #[must_use]
 pub fn derive(item: TokenStream) -> TokenStream {
-    // let item: TokenStream2 = item.into();
-    // let name = find_name(&mut item.into_iter()).expect("no name found");
-
     let input = parse_macro_input!(item as DeriveInput);
     let name = input.ident;
     let generics = input.generics;

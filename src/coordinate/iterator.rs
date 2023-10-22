@@ -1,4 +1,6 @@
-//! Contains iterators for [`Coordinate`]
+//! Contains [`CoordinateIterator`] an iterators for [`Coordinate`].
+//! It is called by [`Coordinate::into_iter`], [`Coordinate::iter`]
+//! and [`Coordinate::iter_mut`].
 
 use std::iter::FusedIterator;
 
@@ -12,7 +14,7 @@ use super::{Axis2D, Coordinate};
 ///
 /// Also implement [`DoubleEndedIterator`], [`FusedIterator`] and [`ExactSizeIterator`].
 #[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)] // it should not be copy as it is an iterator (clippy::copy_iterator)
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CoordinateIterator<T> {
     /// the storage of the iterator. As an [`Option`] in order to be able to move T and
@@ -29,13 +31,66 @@ impl<T> CoordinateIterator<T> {
     #[inline]
     pub fn new(coord: Coordinate<T>) -> Self {
         Self {
-            coord: Coordinate::new(Some(coord.x), Some(coord.y)),
+            coord: coord.into(),
             front: Some(Axis2D::AXIS[0]),
             back: None,
         }
     }
+
+    /// converts a `&CoordinateIterator<T>` into a `CoordinateIterator<&T>`.
+    #[inline]
+    pub const fn as_ref(&self) -> CoordinateIterator<&T> {
+        CoordinateIterator {
+            coord: Coordinate::new(self.coord.x.as_ref(), self.coord.y.as_ref()),
+            front: self.front,
+            back: self.back,
+        }
+    }
+
+    /// converts a `&mut CoordinateIterator<T>` into a `CoordinateIterator<&mut T>`.
+    #[inline]
+    pub fn as_mut(&mut self) -> CoordinateIterator<&mut T> {
+        CoordinateIterator {
+            coord: Coordinate::new(self.coord.x.as_mut(), self.coord.y.as_mut()),
+            front: self.front,
+            back: self.back,
+        }
+    }
 }
 
+/// Used for [`CoordinateIterator::new`].
+impl<T> From<Coordinate<T>> for Coordinate<Option<T>> {
+    #[inline]
+    fn from(coord: Coordinate<T>) -> Self {
+        Self::new(Some(coord.x), Some(coord.y))
+    }
+}
+
+// /// implemented for possible use in [`CoordinateIterator`]
+// impl<T> From<Coordinate<T>> for Coordinate<MaybeUninit<T>> {
+//     #[inline]
+//     fn from(coord: Coordinate<T>) -> Self {
+//         Self::new(MaybeUninit::new(coord.x), MaybeUninit::new(coord.y))
+//     }
+// }
+
+/// Same as [`CoordinateIterator::as_ref`].
+impl<'a, T> From<&'a CoordinateIterator<T>> for CoordinateIterator<&'a T> {
+    #[inline]
+    fn from(value: &'a CoordinateIterator<T>) -> Self {
+        value.as_ref()
+    }
+}
+
+/// Same as [`CoordinateIterator::as_mut`].
+impl<'a, T> From<&'a mut CoordinateIterator<T>> for CoordinateIterator<&'a mut T> {
+    #[inline]
+    fn from(value: &'a mut CoordinateIterator<T>) -> Self {
+        value.as_mut()
+    }
+}
+
+/// Create a new iterator with of a [`Coordinate`] with default element
 impl<T: Default> Default for CoordinateIterator<T> {
     #[inline]
     fn default() -> Self {
@@ -122,9 +177,33 @@ impl<'a, T> IntoIterator for &'a mut Coordinate<T> {
     }
 }
 
+/// equivalent as calling [`Coordinate::into_iter`].
+impl<T> From<Coordinate<T>> for CoordinateIterator<T> {
+    #[inline]
+    fn from(value: Coordinate<T>) -> Self {
+        value.into_iter()
+    }
+}
+
+/// equivalent as calling `<&Coordinate>::into_iter`.
+impl<'a, T> From<&'a Coordinate<T>> for CoordinateIterator<&'a T> {
+    #[inline]
+    fn from(value: &'a Coordinate<T>) -> Self {
+        value.into_iter()
+    }
+}
+
+/// equivalent as calling `<&mut Coordinate>::into_iter`.
+impl<'a, T> From<&'a mut Coordinate<T>> for CoordinateIterator<&'a mut T> {
+    #[inline]
+    fn from(value: &'a mut Coordinate<T>) -> Self {
+        value.into_iter()
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use super::Coordinate;
+    use super::{Coordinate, CoordinateIterator};
 
     #[allow(clippy::cognitive_complexity)]
     #[test]
@@ -165,5 +244,67 @@ mod test {
         assert_eq!(iter.size_hint(), (0, Some(0)));
         assert_eq!(iter.next(), None);
         assert_eq!(iter.size_hint(), (0, Some(0)));
+
+        let mut iter = CoordinateIterator::<String>::default();
+        assert_eq!(iter.next(), Some(String::default()));
+        assert_eq!(iter.next(), Some(String::default()));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn conversion_iter() {
+        let c = Coordinate::new(0_usize, 1_usize);
+        let mut iter = c.into_iter();
+
+        let mut i_ref = iter.as_ref();
+        assert_eq!(i_ref.next(), Some(&0_usize));
+        assert_eq!(i_ref.next(), Some(&1_usize));
+        assert_eq!(i_ref.next(), None);
+
+        let mut i_mut = iter.as_mut();
+        let mut_ref = i_mut.next();
+        assert_eq!(mut_ref, Some(&mut 0_usize));
+        *mut_ref.expect("it is some") = 4_usize;
+
+        let mut_ref = i_mut.next();
+        assert_eq!(mut_ref, Some(&mut 1_usize));
+        *mut_ref.expect("it is some") = 5_usize;
+
+        assert_eq!(i_mut.next(), None);
+
+        assert_eq!(iter.next(), Some(4_usize));
+        assert_eq!(iter.next(), Some(5_usize));
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+
+        let mut c = Coordinate::new(0_usize, 1_usize);
+
+        let iter = Into::<CoordinateIterator<_>>::into(c);
+        assert_eq!(iter, c.into_iter());
+        let iter = Into::<CoordinateIterator<_>>::into(&c);
+        assert_eq!(iter, (&c).into_iter());
+        let mut iter = Into::<CoordinateIterator<_>>::into(&mut c);
+        assert_eq!(iter.next(), Some(&mut 0));
+        assert_eq!(iter.next(), Some(&mut 1));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn conversion_coord() {
+        let coord = Coordinate::new(0_i32, 1_i32);
+        let c_opt = Into::<Coordinate<Option<i32>>>::into(coord);
+        assert_eq!(c_opt, Coordinate::new(Some(0_i32), Some(1_i32)));
+
+        // let c_maybe_uninit = Into::<Coordinate<MaybeUninit<i32>>>::into(coord);
+        // let coord_check = Coordinate::new(MaybeUninit::new(0_i32), MaybeUninit::new(1_i32));
+
+        // for (el, check) in c_maybe_uninit.into_iter().zip(coord_check.into_iter()) {
+        //     assert_eq!(
+        //         // SAFETY: this should be safe
+        //         unsafe { el.assume_init() },
+        //         // SAFETY: this is safe we use MaybeUninit::new
+        //         unsafe { check.assume_init() }
+        //     );
+        // }
     }
 }

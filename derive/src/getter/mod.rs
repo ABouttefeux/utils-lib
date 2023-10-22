@@ -56,7 +56,6 @@ pub fn derive(item: TokenStream) -> TokenStream {
                         Ok(option) => Some(option.into_token_stream()),
                         Err(OptionParseError::NotFound) => None,
                         Err(err) => {
-                            //println!("error parsing option: {err}");
                             let message = format!("error parsing option: {err}");
                             Some(quote_compile_error!(#message))
                         }
@@ -73,7 +72,9 @@ pub fn derive(item: TokenStream) -> TokenStream {
     };
 
     let out = if vec.is_empty() {
-        quote_compile_error!("No field has attribute #[get] or #[get_mut] has been found.")
+        let message = OptionParseError::NotFound.to_string();
+        //"No field has attribute #[get] or #[get_mut] has been found."
+        quote_compile_error!(#message)
     } else {
         let name = input.ident;
         let generics = input.generics;
@@ -87,9 +88,6 @@ pub fn derive(item: TokenStream) -> TokenStream {
             }
         }
     };
-
-    //println!("out:");
-    //println!("{out}");
 
     out.into()
 }

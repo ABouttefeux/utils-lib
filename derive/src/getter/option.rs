@@ -3,22 +3,22 @@
 
 #![allow(clippy::module_name_repetitions)] // TODO
 
-use std::collections::HashSet;
-use std::hash::Hash;
+use std::{collections::HashSet, hash::Hash};
 
 use macro_utils::field::{Field, FieldInformation};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
 use syn::{punctuated::Punctuated, Meta, Path, Token};
 
-use super::attribute_option::ToCode;
-use super::error::{
-    AddConfigError, GetterParseError, OptionValidationError, ParseAttributeOptionError,
-};
-use super::name::FunctionName;
-use super::option_enum::{ImmutableOptionList, MutableOptionList, OptionList};
 use super::{
-    const_ty::ConstTy, getter_ty::GetterTy, self_ty::SelfTy, which_getter::WhichGetter,
+    attribute_option::ToCode,
+    const_ty::ConstTy,
+    error::{AddConfigError, GetterParseError, OptionValidationError, ParseAttributeOptionError},
+    getter_ty::GetterTy,
+    name::FunctionName,
+    option_enum::{ImmutableOptionList, MutableOptionList, OptionList},
+    self_ty::SelfTy,
+    which_getter::WhichGetter,
     OptionParseError, ParseOption, Visibility,
 };
 
@@ -59,13 +59,15 @@ impl GetterOption {
             .any(|s| path.is_ident(s))
     }
 
+    // TODO
+    // - if we want a mutable we write `#[get_mut]` with th same above rule or `#[get(mut)]`.
+    // - if we want both mut and mut we write `#[get(add_mut)]` or `#[get_mut(add_imut)]`
+    //  or `#[get(both)]`.
+
     /// - by default we would have `#[get]` it create a private getter.
-    /// - if we want a public we have ! #[get(pub)]!  or `#[get(visibility = pub)]`,
+    /// - if we want a public we have `#[get(pub)]`  or `#[get(visibility = pub)]`,
     /// possibilities are pub(...) public private.
     /// - if we want to rename we write `#[get(rename = "...")]`.
-    /// - if we want a mutable we write `#[get_mut]` with th same above rule or `#[get(mut)]`.
-    /// - if we want both mut and mut we write `#[get(add_mut)]` or `#[get_mut(add_imut)]`
-    ///  or `#[get(both)]`.
     pub fn parse(field: Field) -> Result<Self, OptionParseError> {
         /// merge a configuration with an option of a which getter
         #[must_use]
@@ -172,10 +174,12 @@ impl ToTokens for GetterOption {
         tokens.extend(self.which.to_code(&self.field));
     }
 }
+
 //-------------------------
 
 // TODO move
 // TODO name
+
 /// trait to avoid code repetition for [`ParseGetterOption::parse`] between
 /// [`ImmutableGetterOption`] and [`MutableGetterOption`].
 // the visibility is only require for the doc link in the doc of the error.
@@ -215,7 +219,6 @@ pub(super) trait ParseGetterOption: Sized + Default {
     fn add_config(&mut self, option: &Meta) -> Result<Self::Option, AddConfigError<Self::Option>>;
 }
 
-// TODO validation
 /// Option for immutable getter
 #[derive(Clone, Default)]
 pub struct ImmutableGetterOption {

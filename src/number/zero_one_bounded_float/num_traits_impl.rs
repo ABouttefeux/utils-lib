@@ -12,6 +12,12 @@ impl One for ZeroOneBoundedFloat {
     fn one() -> Self {
         Self::ONE
     }
+
+    // in next version this will be require
+    #[inline]
+    fn is_one(&self) -> bool {
+        self.float().is_one()
+    }
 }
 
 impl Bounded for ZeroOneBoundedFloat {
@@ -77,6 +83,7 @@ impl NumCast for ZeroOneBoundedFloat {
 // impl NumOps for PositiveFloat {}
 
 impl Pow<Self> for ZeroOneBoundedFloat {
+    // only positive power => it stay between 0 and 1.
     type Output = Self;
 
     #[inline]
@@ -86,6 +93,7 @@ impl Pow<Self> for ZeroOneBoundedFloat {
 }
 
 impl Pow<PositiveFloat> for ZeroOneBoundedFloat {
+    // only positive power => it stay between 0 and 1.
     type Output = Self;
 
     #[cfg(debug_assertions)]
@@ -102,6 +110,7 @@ impl Pow<PositiveFloat> for ZeroOneBoundedFloat {
 }
 
 impl Pow<f64> for ZeroOneBoundedFloat {
+    // this has the potential to be negative power and therefore be > 1.
     type Output = PositiveFloat;
 
     #[inline]
@@ -184,7 +193,7 @@ impl Inv for ZeroOneBoundedFloat {
 
 #[cfg(test)]
 mod test {
-    use num_traits::{Bounded, CheckedMul, Inv, One, SaturatingMul};
+    use num_traits::{Bounded, CheckedMul, One, SaturatingMul};
 
     use super::ZeroOneBoundedFloat;
     use crate::number::ZeroOneBoundedFloatConversionError;
@@ -201,6 +210,8 @@ mod test {
     #[test]
     #[should_panic(expected = "cannot invert zero")]
     fn inv_zero() {
+        use num_traits::Inv;
+
         ZeroOneBoundedFloat::ZERO.inv();
     }
 

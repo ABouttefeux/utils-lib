@@ -43,21 +43,21 @@ impl PartialOrd for ZeroOneBoundedFloat {
 impl Display for ZeroOneBoundedFloat {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.float())
+        <f64 as Display>::fmt(&self.float(), f)
     }
 }
 
 impl UpperExp for ZeroOneBoundedFloat {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:E}", self.float())
+        <f64 as UpperExp>::fmt(&self.float(), f)
     }
 }
 
 impl LowerExp for ZeroOneBoundedFloat {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:e}", self.float())
+        <f64 as LowerExp>::fmt(&self.float(), f)
     }
 }
 
@@ -79,7 +79,7 @@ impl Deref for ZeroOneBoundedFloat {
 
 /// represent in which range a [`f64`] can be respectively to the bounds of
 /// [`ZeroOneBoundedFloat`]
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default, Hash)]
 enum BoundRange {
     /// Strictly above 1
     UpperBound,
@@ -149,8 +149,8 @@ impl ZeroOneBoundedFloat {
     //     Self::new(float).expect("invalid value")
     // }
 
-    /// Create a new Self from a [`f64`]. It returns [`Some`] only if the float is valid ([`Self::validate_data`]), i.e.
-    /// it is >= 0  and <= 1.
+    /// Create a new Self from a [`f64`]. It returns [`Some`] only if the float
+    /// is valid ([`Self::validate_data`]), i.e. it is >= 0  and <= 1.
     ///
     /// # Errors
     ///
@@ -247,7 +247,8 @@ impl ZeroOneBoundedFloat {
     }
 
     // Create a new Self with the float as value if it is valid (`>= 0` and <= 1)
-    /// or return 0 for value < 0 and 1 for value > 1
+    /// or return 0 for value < 0 and 1 for value > 1. If the value is [`f64::NAN`]
+    /// it use the value 0.
     ///
     /// Note that contrary to [`Self::new_or_default`] if values are > 1 it creates [`Self::ONE`]
     /// ```
@@ -262,6 +263,14 @@ impl ZeroOneBoundedFloat {
     /// assert_eq!(
     ///     ZeroOneBoundedFloat::new_or_bounded(1.5_f64),
     ///     ZeroOneBoundedFloat::ONE
+    /// );
+    /// assert_eq!(
+    ///     ZeroOneBoundedFloat::new_or_bounded(f64::NAN),
+    ///     ZeroOneBoundedFloat::ZERO
+    /// );
+    /// assert_eq!(
+    ///     ZeroOneBoundedFloat::new_or_bounded(0.5_f64).float(),
+    ///     0.5_f64
     /// );
     /// # Ok(())
     /// # }
@@ -284,7 +293,7 @@ impl ZeroOneBoundedFloat {
         self.0
     }
 
-    /// Returns a way to mut the underlying float. If the final value is not valid,
+    /// Returns a way to mutate the underlying float. If the final value is not valid,
     /// It is set to 0. See [`ValidationGuard`].
     #[inline]
     #[must_use]
@@ -687,6 +696,43 @@ mod test {
         assert_eq!(p1.saturating_sub(p2), ZeroOneBoundedFloat::new(0_f64)?);
         assert_eq!(p2.saturating_sub(p1), ZeroOneBoundedFloat::new(0.3_f64)?);
 
+        Ok(())
+    }
+
+    #[test]
+    fn fmt() -> Result<(), ConversionError> {
+        assert_eq!(
+            format!("{}", ZeroOneBoundedFloat::new(0.234_56_f64)?),
+            "0.23456"
+        );
+        assert_eq!(
+            format!("{:.1}", ZeroOneBoundedFloat::new(0.234_56_f64)?),
+            "0.2"
+        );
+        assert_eq!(
+            format!("{:.2}", ZeroOneBoundedFloat::new(0.234_56_f64)?),
+            "0.23"
+        );
+        assert_eq!(
+            format!("{:8}", ZeroOneBoundedFloat::new(0.234_56_f64)?),
+            " 0.23456"
+        );
+        assert_eq!(
+            format!("{:E}", ZeroOneBoundedFloat::new(1.234_56E-10_f64)?),
+            "1.23456E-10"
+        );
+        assert_eq!(
+            format!("{:.1E}", ZeroOneBoundedFloat::new(1.234_56E-10_f64)?),
+            "1.2E-10"
+        );
+        assert_eq!(
+            format!("{:e}", ZeroOneBoundedFloat::new(1.234_56e-10_f64)?),
+            "1.23456e-10"
+        );
+        assert_eq!(
+            format!("{:.1e}", ZeroOneBoundedFloat::new(1.234_56e-10_f64)?),
+            "1.2e-10"
+        );
         Ok(())
     }
 }

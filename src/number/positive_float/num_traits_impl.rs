@@ -16,7 +16,7 @@ impl Zero for PositiveFloat {
 
     #[inline]
     fn is_zero(&self) -> bool {
-        self.float() == 0_f64
+        self.float().is_zero()
     }
 }
 
@@ -24,6 +24,12 @@ impl One for PositiveFloat {
     #[inline]
     fn one() -> Self {
         Self::ONE
+    }
+
+    // in next version this will be require
+    #[inline]
+    fn is_one(&self) -> bool {
+        self.float().is_one()
     }
 }
 
@@ -197,7 +203,7 @@ impl CheckedMul for PositiveFloat {
 impl CheckedDiv for PositiveFloat {
     #[inline]
     fn checked_div(&self, v: &Self) -> Option<Self> {
-        if v.float() == 0_f64 {
+        if v.is_zero() {
             None
         } else {
             Self::new(self.float() / v.float()).ok()

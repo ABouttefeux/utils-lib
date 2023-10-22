@@ -1,5 +1,6 @@
 //! Contains the `version_sync` and `trybuild` tests
 
+/// Version sync tests
 #[cfg(test)]
 mod version_sync {
     #[test]
@@ -13,6 +14,8 @@ mod version_sync {
     }
 }
 
+// cspell: ignore trybuild
+/// ui test using trybuild
 #[cfg(test)]
 mod trybuild {
     // run $env:TRYBUILD="overwrite"; cargo t -p utils-lib-derive --tests; $env:TRYBUILD=$null;
@@ -68,5 +71,5 @@ mod trybuild {
 /// ```
 #[doc = include_str!("../../ui_test/pass/trait_sealed.rs")]
 /// ```
-#[cfg(all(feature = "coverage", doctest))]
+#[cfg(all(feature = "coverage", doctest))] // cspell: ignore doctest
 mod coverage {}

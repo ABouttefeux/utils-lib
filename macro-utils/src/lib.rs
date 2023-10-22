@@ -133,5 +133,3 @@ pub mod field;
 
 #[cfg(test)]
 mod test;
-
-//#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]

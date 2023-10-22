@@ -1,10 +1,7 @@
-//! Contains the enums for the list of options [`MutableOptionList`] and [`ImmutableOptionList`]
-//! and the trait [`OptionList`]
+//! Contains the enums for the list of options [`MutableOptionList`]
+//! and [`ImmutableOptionList`] and the trait [`OptionList`].
 
-use std::{
-    fmt::{self, Display},
-    hash::Hash,
-};
+use std::fmt::{self, Display};
 
 /// Trait for common code for listing option:
 /// [`MutableOptionList`] and [`ImmutableOptionList`].

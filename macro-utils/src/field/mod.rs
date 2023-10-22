@@ -1,4 +1,4 @@
-//! Contains [`Field`]
+//! Contains Fields utility.
 
 use std::fmt::{self, Display};
 
@@ -73,6 +73,7 @@ impl FieldName {
     }
 
     /// Return [`Some`] on an [`Ident`] and [`None`] on an [`Index`]
+    #[inline]
     #[must_use]
     pub const fn require_ident(&self) -> Option<&Ident> {
         match self {
@@ -83,24 +84,28 @@ impl FieldName {
 }
 
 impl From<Ident> for FieldName {
+    #[inline]
     fn from(value: Ident) -> Self {
         Self::Ident(value)
     }
 }
 
 impl From<Index> for FieldName {
+    #[inline]
     fn from(value: Index) -> Self {
         Self::Index(value)
     }
 }
 
 impl From<usize> for FieldName {
+    #[inline]
     fn from(value: usize) -> Self {
         Index::from(value).into()
     }
 }
 
 impl ToTokens for FieldName {
+    #[inline]
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         match self {
             Self::Ident(ref ident) => ident.to_tokens(tokens),
@@ -110,6 +115,7 @@ impl ToTokens for FieldName {
 }
 
 impl Display for FieldName {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Ident(ref ident) => write!(f, "{ident}"),
@@ -139,12 +145,14 @@ impl FieldInformation {
     }
 
     /// Getter on the field name.
+    #[inline]
     #[must_use]
     pub const fn field_name(&self) -> &FieldName {
         &self.field_name
     }
 
     /// Getter on the [`Type`] of the field.
+    #[inline]
     #[must_use]
     pub const fn ty(&self) -> &Type {
         &self.ty

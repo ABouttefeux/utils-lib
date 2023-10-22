@@ -141,7 +141,8 @@ pub mod number;
 #[cfg(test)]
 mod test;
 
-pub use utils_lib_derive::{Getter, Sealed};
+#[doc(inline)]
+pub use utils_lib_derive::{trait_sealed, Getter, Sealed};
 
 pub use self::coordinate::{Axis2D, Coordinate};
 pub use self::number::{abs_diff, PositiveFloat, ValidationGuard, ZeroOneBoundedFloat};

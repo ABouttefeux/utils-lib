@@ -17,12 +17,12 @@ pub enum OptionParseError {
     NameValue,
     /// no attribute found and at least one is necessary
     NotFound,
-    /// Parse error form syn
+    /// parse error form syn
     ExprParseError(syn::Error),
-    /// Error while parsing option for getter in the filed attribute
+    /// error while parsing option for getter in the filed attribute
     // TODO Name
     GetterParseError(GetterParseError<ImmutableOptionList>),
-    /// Error during the validation of the option, see [`OptionValidationError`]
+    /// error during the validation of the option, see [`OptionValidationError`]
     OptionValidationError(OptionValidationError),
 }
 
@@ -79,7 +79,7 @@ impl Error for OptionParseError {
 /// that the parsed stream is not describing a given option. But that we should
 /// try for another option.
 ///
-/// It is a recoverable error
+/// It is a recoverable error.
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
 #[non_exhaustive]
@@ -124,13 +124,13 @@ impl Error for AcceptableParseError {
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum UnacceptableParseError {
-    /// The left hand side path in an assignment has multiple section and is therefore not a ident
-    LeftHandSideValuePathIsNotIdent,
-    /// Right hand value in assignment is misformed or invalid
+    /// The left hand side path in an assignment has multiple section and is therefore not a ident.
+    LeftHandSideValueNotIdent,
+    /// Right hand value in assignment is misformed or invalid.
     RightHandValueInvalid,
-    /// The right hand side value is not a literal string when it is expected
+    /// The right hand side value is not a literal string when it is expected.
     RightHandNameValueExprNotLitString,
-    /// Parse error form syn
+    /// Parse error form syn.
     IdentParseError(syn::Error),
 }
 
@@ -145,11 +145,9 @@ impl Display for UnacceptableParseError {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::RightHandValueInvalid => {
-                write!(f, "right hand value in assignment is misformed or invalid")
-            }
+            Self::RightHandValueInvalid => write!(f, "right hand value in assignment is misformed or invalid"),
             Self::IdentParseError(ref err) => write!(f, "syn ident parse error: {err}"),
-            Self::LeftHandSideValuePathIsNotIdent => write!(f, "the left hand side path in an assignment has multiple section and is therefore not a ident"),
+            Self::LeftHandSideValueNotIdent => write!(f, "the left hand side path in an assignment has multiple section and is therefore not a ident"),
             Self::RightHandNameValueExprNotLitString => write!(f, "the right hand side value is not a literal string when it is expected"),
         }
     }
@@ -161,7 +159,7 @@ impl Error for UnacceptableParseError {
         match self {
             Self::RightHandValueInvalid
             | Self::RightHandNameValueExprNotLitString
-            | Self::LeftHandSideValuePathIsNotIdent => None,
+            | Self::LeftHandSideValueNotIdent => None,
             Self::IdentParseError(ref err) => Some(err),
         }
     }
