@@ -1,3 +1,4 @@
+// pass test for mut getter
 use utils_lib_derive::Getter;
 
 #[derive(Getter, Clone, Copy)]

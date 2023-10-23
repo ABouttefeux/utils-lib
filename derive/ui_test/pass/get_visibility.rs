@@ -1,3 +1,4 @@
+// pass test for visibility argument
 use utils_lib_derive::Getter;
 
 mod name {

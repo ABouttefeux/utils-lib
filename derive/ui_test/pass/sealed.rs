@@ -1,3 +1,4 @@
+// pass test for Sealed derive
 use utils_lib_derive::Sealed;
 
 mod private {

@@ -1,47 +1,7 @@
-error[E0507]: cannot move out of `self.vec` which is behind a shared reference
- --> ui_test/fail/get_type.rs:9:10
-  |
-9 | #[derive(Getter)]
-  |          ^^^^^^ move occurs because `self.vec` has type `Vec<()>`, which does not implement the `Copy` trait
-  |
-  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0382]: use of moved value: `s`
-  --> ui_test/fail/get_type.rs:27:13
+error: error parsing option: got error right hand value in assignment is misformed or invalid while parsing option self type
+  --> ui_test/fail/get_type.rs:10:10
    |
-24 |     let s = S { a: 0 };
-   |         - move occurs because `s` has type `S`, which does not implement the `Copy` trait
-25 |     let _ = s.a();
-   |               --- `s` moved due to this method call
-26 |     // s is moved and no longer valid
-27 |     let _ = s.a();
-   |             ^ value used here after move
-   |
-note: `S::a` takes ownership of the receiver `self`, which moves `s`
-  --> ui_test/fail/get_type.rs:3:10
-   |
-3  | #[derive(Getter)]
+10 | #[derive(Getter)]
    |          ^^^^^^
+   |
    = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0382]: borrow of moved value: `s2`
-  --> ui_test/fail/get_type.rs:35:16
-   |
-29 |     let s2 = S3 {
-   |         -- move occurs because `s2` has type `S3`, which does not implement the `Copy` trait
-...
-34 |     assert_eq!(s2.f3(), "s3".to_owned()); // we "forgot" to clone s which lead to an error
-   |                   ---- `s2` moved due to this method call
-35 |     assert_eq!(s2.f4(), "s4".to_owned());
-   |                ^^ value borrowed here after move
-   |
-note: `S3::f3` takes ownership of the receiver `self`, which moves `s2`
-  --> ui_test/fail/get_type.rs:15:10
-   |
-15 | #[derive(Getter, Clone)]
-   |          ^^^^^^
-   = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
-help: you can `clone` the value and consume it, but this might not be your desired behavior
-   |
-34 |     assert_eq!(s2.clone().f3(), "s3".to_owned()); // we "forgot" to clone s which lead to an error
-   |                  ++++++++

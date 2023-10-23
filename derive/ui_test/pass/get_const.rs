@@ -1,3 +1,4 @@
+// pass test for const argument
 use utils_lib_derive::Getter;
 
 #[derive(Getter, Clone)]

@@ -1,5 +1,4 @@
 // fail test for non const getter
-
 use utils_lib_derive::Getter;
 
 #[derive(Getter, Clone)]
@@ -9,10 +8,7 @@ struct S {
 }
 
 const fn cst_fn(s: &S) -> &usize {
-    s.f()
+    s.f() // f() is not const and therefore fail to compile
 }
 
-fn main() {
-    let s = S { f: 1 };
-    assert_eq!(cst_fn(&s), &1);
-}
+fn main() {}

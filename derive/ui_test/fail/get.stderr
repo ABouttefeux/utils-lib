@@ -1,39 +1,39 @@
 error: The trait getter cannot be derive on fieldless struct.
- --> ui_test/fail/get.rs:3:10
+ --> ui_test/fail/get.rs:4:10
   |
-3 | #[derive(Getter)]
+4 | #[derive(Getter)]
   |          ^^^^^^
   |
   = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: attribute #[get] or #[get_mut] not found and at least one is necessary
- --> ui_test/fail/get.rs:6:10
+ --> ui_test/fail/get.rs:7:10
   |
-6 | #[derive(Getter)]
+7 | #[derive(Getter)]
   |          ^^^^^^
   |
   = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: error parsing option: name = "#" is missing and there is no default name for tuple struct
- --> ui_test/fail/get.rs:9:10
-  |
-9 | #[derive(Getter)]
-  |          ^^^^^^
-  |
-  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
+  --> ui_test/fail/get.rs:11:10
+   |
+11 | #[derive(Getter)]
+   |          ^^^^^^
+   |
+   = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: error parsing option: field attribute is not supported in name value mode, please refer to the documentation
-  --> ui_test/fail/get.rs:16:10
+  --> ui_test/fail/get.rs:18:10
    |
-16 | #[derive(Getter)]
+18 | #[derive(Getter)]
    |          ^^^^^^
    |
    = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: attribute #[get] or #[get_mut] not found and at least one is necessary
-  --> ui_test/fail/get.rs:23:10
+  --> ui_test/fail/get.rs:26:10
    |
-23 | #[derive(Getter)]
+26 | #[derive(Getter)]
    |          ^^^^^^
    |
    = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)

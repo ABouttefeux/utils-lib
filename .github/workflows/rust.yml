@@ -21,7 +21,7 @@ jobs:
         toolchain: stable
     
     - name: Linter
-      run: cargo +stable clippy --all --verbose --tests
+      run: cargo +stable clippy --all --verbose --tests -- -D warnings
       
     - name: Run tests
       run: cargo +stable test --all --verbose --no-fail-fast
@@ -42,7 +42,7 @@ jobs:
         toolchain: stable
     
     - name: Linter release
-      run: cargo +stable clippy --all --release --verbose --tests
+      run: cargo +stable clippy --all --release --verbose --tests -- -D warnings
       
     - name: Run release tests
       run: cargo +stable test --all --release --verbose --no-fail-fast

@@ -1,3 +1,5 @@
+// test the reporting of
+// OptionParseError::GetterParseError(GetterParseError::<ImmutableOptionList>::AddConfigError)
 use utils_lib_derive::Getter;
 
 #[derive(Getter)]

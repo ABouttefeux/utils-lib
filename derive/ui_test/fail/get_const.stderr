@@ -1,7 +1,7 @@
 error[E0015]: cannot call non-const fn `S::f` in constant functions
-  --> ui_test/fail/get_const.rs:12:7
+  --> ui_test/fail/get_const.rs:11:7
    |
-12 |     s.f()
+11 |     s.f() // f() is not const and therefore fail to compile
    |       ^^^
    |
    = note: calls in constant functions are limited to constant functions, tuple structs and tuple variants
