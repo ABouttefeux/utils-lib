@@ -37,3 +37,21 @@ error: attribute #[get] or #[get_mut] not found and at least one is necessary
    |          ^^^^^^
    |
    = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0599]: no method named `field` found for struct `MultipleAttribute` in the current scope
+  --> ui_test/fail/get.rs:45:18
+   |
+34 | struct MultipleAttribute {
+   | ------------------------ method `field` not found for this struct
+...
+45 |     assert_eq!(m.field(), &());
+   |                  ^^^^^ method not found in `MultipleAttribute`
+
+error[E0599]: no method named `field_mut` found for struct `MultipleAttribute` in the current scope
+  --> ui_test/fail/get.rs:46:18
+   |
+34 | struct MultipleAttribute {
+   | ------------------------ method `field_mut` not found for this struct
+...
+46 |     assert_eq!(m.field_mut(), &mut ());
+   |                  ^^^^^^^^^ help: there is a method with a similar name: `get_mut`

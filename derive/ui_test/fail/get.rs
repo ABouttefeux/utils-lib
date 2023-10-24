@@ -28,4 +28,20 @@ struct S2 {
     f: usize,
 }
 
-fn main() {}
+// test the case of multiple field attribute on the same field
+// see ../pass/get.rs for the pass test
+#[derive(Getter)]
+struct MultipleAttribute {
+    #[get(name = "field")] // this should be overridden
+    #[get(name = "get")]
+    f: (),
+    #[get_mut(name = "field_mut")] // this should be overridden
+    #[get_mut(name = "get_mut")]
+    g: (),
+}
+
+fn main() {
+    let mut m = MultipleAttribute { f: (), g: () };
+    assert_eq!(m.field(), &());
+    assert_eq!(m.field_mut(), &mut ());
+}

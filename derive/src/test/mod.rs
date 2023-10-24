@@ -66,6 +66,9 @@ mod trybuild {
 #[doc = include_str!("../../ui_test/pass/get_visibility.rs")]
 /// ```
 /// ```
+#[doc = include_str!("../../ui_test/pass/get.rs")]
+/// ```
+/// ```
 #[doc = include_str!("../../ui_test/pass/sealed.rs")]
 /// ```
 /// ```
