@@ -6,8 +6,9 @@ steps:
 - name: test
   image: rust
   commands:
-  - cargo clippy --all
-  - cargo test --all
+  - cargo test --all --verbose --no-fail-fast
+  - cargo test --all --verbose --no-fail-fast --examples
+  - cargo clippy --all --verbose --tests -- -D warnings
 
 ---
 kind: pipeline

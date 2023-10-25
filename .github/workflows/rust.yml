@@ -11,41 +11,26 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        profile: [test, release]
+        exclude:
+          - os: windows-latest
+            profile: release
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     
     - name: Install Rust stable toolchain
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        default: true
     
-    - name: Linter
-      run: cargo +stable clippy --all --verbose --tests -- -D warnings
-      
     - name: Run tests
-      run: cargo +stable test --all --verbose --no-fail-fast
+      run: cargo test --profile ${{ matrix.profile }} --all --verbose --no-fail-fast
     
     - name: Run examples tests
-      run: cargo +stable test --all --verbose --examples --no-fail-fast
-
-  build-release:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      run: cargo test --profile ${{ matrix.profile }} --all --verbose --no-fail-fast --examples
     
-    - name: Install Rust stable toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+    - name: Linter
+      run: cargo clippy --profile ${{ matrix.profile }} --all --verbose --tests -- -D warnings
     
-    - name: Linter release
-      run: cargo +stable clippy --all --release --verbose --tests -- -D warnings
-      
-    - name: Run release tests
-      run: cargo +stable test --all --release --verbose --no-fail-fast
-    
-    - name: Run release examples tests
-      run: cargo +stable test --all --release --verbose --examples --no-fail-fast

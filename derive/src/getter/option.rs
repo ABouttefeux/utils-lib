@@ -187,8 +187,8 @@ pub(super) trait ParseGetterOption: Sized + Default {
     type Option: OptionList + Hash + Eq;
 
     /// Try tp parse an iterator of [`Meta`] into a Option
-    fn parse(
-        tokens: impl IntoIterator<Item = Meta>,
+    fn parse<T: IntoIterator<Item = Meta>>(
+        tokens: T,
     ) -> Result<Self, GetterParseError<Self::Option>> {
         let mut set = HashSet::new();
         let mut s = Self::default();
