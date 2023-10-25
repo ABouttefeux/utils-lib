@@ -121,89 +121,497 @@
 
 //
 //---------------
-#![warn(missing_docs)] // doc
+//#![doc(test(attr(deny(warnings))))]
 #![warn(clippy::missing_docs_in_private_items)] // doc
+#![warn(missing_docs)] // doc
 
 //--
 //#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize)]
 
-#[cfg(test)]
+mod getter;
+mod sealed;
+#[cfg(any(test, doctest))] // cspell: ignore doctest
 mod test;
 
 use proc_macro::TokenStream;
-use proc_macro2::{
-    token_stream::IntoIter, Delimiter, Ident, Span, TokenStream as TokenStream2,
-    TokenTree as TokenTree2,
-};
-use quote::quote;
 
-//#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
-
-/// Find the name of the type of the derive macro
-fn find_name(iter: &mut IntoIter) -> Ident {
-    let Some(TokenTree2::Ident(i)) = iter
-    .find(|el| {
-        if let TokenTree2::Ident(ident) = el {
-            let s = ident.to_string();
-            s != "pub"
-                && s != "crate"
-                && s != "fn"
-                && s != "struct"
-                && s != "union"
-                && s != "enum"
-                && s != "for"
-        } else {
-            false
-        }
-    }) else {panic!("no name found")};
-
-    Ident::new(i.to_string().as_str(), Span::call_site())
+/// Derive the `Sealed` trait
+///
+/// # Panic
+///
+/// panic if the derive macro is not applied to an struct, enum or union
+///
+/// # Example
+///
+/// ```
+/// use utils_lib_derive::{trait_sealed, Sealed};
+///
+/// // this create a module named [`private`] with a trait named [`Sealed`]
+/// // without method inside that module.
+/// trait_sealed!();
+///
+/// #[derive(Sealed)]
+/// struct S;
+///
+/// // this trait is sealed and cannot me implemented outside of this crate
+/// // because [`Sealed`] is a private trait that can't be implemented outside
+/// // of this crate.
+/// pub trait Trait: private::Sealed {}
+///
+/// impl Trait for S {}
+/// # fn main() {}
+/// ```
+#[inline]
+#[must_use]
+#[proc_macro_derive(Sealed)]
+pub fn derive_sealed(item: TokenStream) -> TokenStream {
+    sealed::derive(item)
 }
 
-#[proc_macro_derive(Getter, attributes(get))]
+/// Creates a trait `Sealed` into a private module `private`.
+///
+/// # Example
+///
+/// ```
+/// use utils_lib_derive::{trait_sealed, Sealed};
+///
+/// // this create a module named [`private`] with a trait named [`Sealed`]
+/// // without method inside that module.
+/// trait_sealed!();
+///
+/// #[derive(Sealed)]
+/// struct S;
+///
+/// // this trait is sealed and cannot me implemented outside of this crate
+/// // because [`Sealed`] is a private trait that can't be implemented outside
+/// // of this crate.
+/// pub trait Trait: private::Sealed {}
+///
+/// impl Trait for S {}
+/// # fn main() {}
+/// ```
+#[inline]
+#[must_use]
+#[proc_macro]
+pub fn trait_sealed(item: TokenStream) -> TokenStream {
+    sealed::trait_sealed(item)
+}
+
+// TODO doc
+/// Derive getter macro
+///
+/// valid field attribute:
+/// - `#[get]` for immutable getter
+/// - `#[get_mut]` for mutable getter
+///
+/// Valid option for mutable getter :
+/// - Name
+/// - Visibility
+///
+/// Valid option for immutable getter :
+/// - Name
+/// - Visibility
+/// - Constant type
+/// - Getter type
+/// - Self Type
+///
+/// ## Name
+///
+/// determine the name og the getter. By default it is the name of the field for
+/// immutable getter and `{name}_mut` for mutable getter. It can be rename using
+/// the option `name = "{name}"` or `name({name})` with `{name}` the name of the getter.
+///
+/// ### Example
+/// ```
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Getter)]
+/// struct S {
+///     #[get(name = "field")]
+///     #[get_mut(name(mut_getter))]
+///     f: usize,
+///     #[get_mut] // by default the name of the getter is `c_mut`
+///     #[get] // by default the name of the getter is `c`
+///     c: char,
+/// }
+///
+/// let mut s = S { f: 0, c: 'A' };
+/// assert_eq!(s.field(), &0);
+/// assert_eq!(s.mut_getter(), &mut 0);
+///
+/// assert_eq!(s.c(), &'A');
+/// assert_eq!(s.c_mut(), &mut 'A');
+/// ```
+///
+/// In the case of a tuple struct the name is a requirement.
+/// ```compile_fail
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Getter)]
+/// struct Tuple(#[get] f32)
+/// ```
+/// should be changed to
+/// ```
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Getter)]
+/// struct Tuple(#[get(name = "field")] f32);
+///
+/// let t = Tuple(0_f32);
+/// assert_eq!(t.field(), &0_f32);
+/// ```
+///
+/// ## Visibility
+///
+/// Determine the visibility of the getter, i.e. if it is private, public or restrained.
+/// As for function in rust by default getter are private. It is possible to change
+/// the visibility of the getter using the following syntax
+///  accepted option :
+/// - value:
+///   - `Pub`
+///   - `Crate`
+///   - `pub` (wip)
+///   - `public`
+///   - `crate` (wip)
+///   - `pub({path})` (wip)
+///   - `private`
+/// - `Visibility = "{value}"` with `{value}` a previously define value
+/// - `Visibility({value})`
+///
+/// ### Example
+///
+/// TODO
+///
+/// ```
+/// mod private {
+///     use utils_lib_derive::Getter;
+///
+///     #[derive(Getter)]
+///     pub struct S {
+///         #[get(public)]
+///         pub f: usize,
+///     }
+/// }
+///
+/// let mut s = private::S { f: 0 };
+/// assert_eq!(s.f(), &0);
+/// ```
+///
+/// ## Constant type
+///
+/// Determine if the function is constant or not. By default it is not but I would strongly
+/// advice to make it constant.
+/// accepted option :
+/// - value:
+///   - `Const`
+///   - `const` (WIP)
+/// - `{value} = {bool}`
+/// - `{value}({bool})` (wip)
+/// with `{bool}` a boolean.
+///
+/// ### Example
+///
+/// ```
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Getter, Clone)]
+/// struct S {
+///     #[get(Const)]
+///     f: usize,
+/// }
+///
+/// const fn cst_fn(s: &S) -> &usize {
+///     // we can call f() in a const fn as it is const
+///     s.f()
+/// }
+/// ```
+///
+/// ## Getter type
+///
+/// Determine how the value is returned. It can be returned by reference, by copy or by clone.
+/// An explicit definition can be found after the example.
+/// By default the value is return by reference.
+/// accepted option :
+/// - value
+///   - `by_ref`
+///   - `by ref`
+///   - `by_value` : copy type
+///   - `by_copy`
+///   - `copy`
+///   - `Copy`
+///   - `by_clone`
+///   - `clone`
+///   - `Clone`
+/// - `{left} = "{value}"`
+/// - `{left} ({value})`
+/// with {left}
+/// - `getter_ty`
+/// - `Getter_ty`
+/// - `getter_type`
+/// - `Getter_type`
+///
+/// ### Example
+///
+/// ```
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Getter, Clone)]
+/// struct S {
+///     // this just the default getter and return `&Vec<usize>`
+///     #[get(getter_ty = "by_ref")]
+///     f1: Vec<usize>,
+///     #[get(by_copy)] // return a copy of the field
+///     f2: i32,
+///     #[get(getter_ty = "by_value", self_ty = "value")] // move self and return the string
+///     f3: String,
+///     #[get(getter_ty(Clone))] // return a copy of the field
+///     f4: String,
+/// }
+///
+/// let s = S {
+///     f1: vec![0_usize],
+///     f2: 0_i32,
+///     f3: "s3".to_owned(),
+///     f4: "s4".to_owned(),
+/// };
+///
+/// assert_eq!(s.f1(), &vec![0_usize]);
+///
+/// let mut value = s.f2();
+/// assert_eq!(value, 0_i32);
+/// value = 1_i32;
+/// assert_eq!(s.f2(), 0_i32);
+///
+/// assert_eq!(s.clone().f3(), "s3".to_owned()); // we need to clone as s is moved.
+///
+/// let mut string = s.f4();
+/// assert_eq!(string, "s4".to_owned());
+/// string = String::new();
+/// assert_eq!(s.f4(), "s4".to_owned());
+/// ```
+///
+/// let us show some properties. First lest go bac to the `clone` when using the `f3`
+/// getter. As before
+/// ```compile_fail
+/// # use utils_lib_derive::Getter;
+/// #
+/// #[derive(Getter, Clone)]
+/// struct S {
+///     #[get(getter_ty = "by_value", self_ty = "value")]
+///     f3: String,
+/// #    #[get(getter_ty(Clone))]
+/// #    f4: String,
+/// }
+///
+/// let s = S {
+///     f3: "s3".to_owned(),
+/// #   f4: "s4".to_owned(),
+/// };
+///
+/// assert_eq!(s.f3(), "s3".to_owned()); // we "forgot" to clone s which lead to an error
+/// assert_eq!(s.f4(), "s4".to_owned());
+/// ```
+/// Another common common mistake is to use `by_value` (or `copy`) a non copy type
+/// without using a `getter_ty = "by_value"`
+/// ```compile_fail
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Getter)]
+/// struct S {
+///     #[get(getter_ty = "by_value")]
+///     f: Vec<()>,
+/// }
+/// ```
+///
+/// ### Definition
+///
+/// A getter type by copy means that we write
+/// ```
+/// # struct S {
+/// #   field: u32,
+/// # }
+/// #
+/// # impl S {
+/// fn field(&self) -> u32 {
+///     self.field
+/// }
+/// # }
+/// ```
+/// It works only for type that implements [`Copy`].
+///
+/// A getter type by clone means that we write
+/// ```
+/// # struct S {
+/// #   field: String,
+/// # }
+/// #
+/// # impl S {
+/// fn field(&self) -> String {
+///     self.field.clone()
+/// }
+/// # }
+/// ```
+/// It works only for type that implements [`Clone`].
+///
+/// A getter type by reference means that we write
+/// ```
+/// # struct S {
+/// #   field: String,
+/// # }
+/// #
+/// # impl S {
+/// fn field(&self) -> &String {
+///     &self.field
+/// }
+/// # }
+/// ```
+/// This is the default behavior and does not require any traits.
+///
+/// ## Self Type
+///
+/// Determine how self is handled. It is either used by reference or by value (or moved).
+/// An explicit definition can be found after the example.
+/// By default the self is referenced.
+/// Note that using `self_ty = "value"` require that `getter_ty` to be by
+/// `value` (or by `clone`).
+/// accepted option :
+/// - `{left} = "{right}"`
+/// - `{left}({right})`
+/// with `{left}`:
+/// - `self_ty`
+/// - `Self_ty`
+/// - `self_type`
+/// - `Self_type`
+/// - `Self`
+/// and `{right}`
+/// - `value`
+/// - `copy`
+/// - `move`
+/// - `ref`
+///
+/// ### Example
+///
+/// ```
+/// use utils_lib_derive::Getter;
+///
+/// #[derive(Clone, Copy, Getter)]
+/// struct S {
+///     #[get(self_ty = "value", getter_ty = "copy")]
+///     f: u32,
+/// }
+///
+/// let s = S { f: 0_u32 };
+/// assert_eq!(s.f(), 0_u32);
+/// assert_eq!(s.f(), 0_u32);
+///
+/// #[derive(Clone, Getter)]
+/// struct S2 {
+///     #[get(Self_type(value), Getter_type(by_value))]
+///     f: String,
+/// }
+///
+/// let s = S2 {
+///     f: "string".to_owned(),
+/// };
+/// assert_eq!(s.f(), "string".to_owned());
+/// ```
+/// The next example demonstrate that using `self_ty` as `value` but leaving `getter_ty`
+/// as ref gives an error.
+/// ```compile_fail
+/// use utils_lib_derive::Getter;
+///
+/// [derive(Clone, Copy, Getter)]
+/// struct S {
+///     #[get(self_ty = "value", getter_ty = "ref")]
+///     f: u32,
+/// }
+/// ```
+///
+/// ### Definition
+///
+/// A self type is referenced if we write
+///  ```
+/// # struct S {
+/// #   field: String,
+/// # }
+/// #
+/// # impl S {
+/// fn field(&self) -> &String {
+///     &self.field
+/// }
+/// # }
+/// ```
+/// 
+/// A self type is moved if we write
+/// ```
+/// # struct S {
+/// #   field: u32,
+/// # }
+/// #
+/// # impl S {
+/// fn field(self) -> u32 {
+///     self.field
+/// }
+/// # }
+/// ```
+/// It is only recommended for Type that implement [`Copy`] and is smaller or equal in size
+/// of an [`usize`] of your targeted platforms. Note also that the `getter_type` must be `by_value`
+/// (or `clone`) and will give an error if left by default or set `by_ref`.
+#[inline]
+#[must_use]
+#[proc_macro_derive(Getter, attributes(get, get_mut))]
 pub fn derive_getter(item: TokenStream) -> TokenStream {
-    // Let us find the inner part of the structure
-
-    let item: TokenStream2 = item.into();
-    let mut iter = item.into_iter();
-    let name = find_name(&mut iter);
-
-    let Some(TokenTree2::Group(group)) = iter.find(|el|{
-        matches!(el, TokenTree2::Group(gp) if gp.delimiter() == Delimiter::Bracket)
-    }) else {panic!("no groupe found")};
-
-    let stream = group.stream();
-
-    let vector = stream.into_iter().collect::<Vec<_>>();
-
-    let vector = vector
-        .split(|el| matches!(el, TokenTree2::Punct(p) if p.as_char() == ','))
-        .collect::<Vec<_>>();
-
-    let code_vec = Vec::<TokenStream2>::new();
-
-    const MESSAGE_MISFORMED: &str = "misformed structure, no first element";
-
-    for array in vector {
-        let Some(element) = array.first() else {panic!("{}", MESSAGE_MISFORMED)};
-
-        let function_add_code = |_config: (), _ident: &Ident, _ty: &Ident| todo!();
-
-        match element {
-            TokenTree2::Punct(p) if p.as_char() == '#' => {
-                function_add_code((), todo!() /* array[2] */, todo!() /* array[4] */);
-            }
-            TokenTree2::Ident(ident) => {
-                function_add_code((), ident, todo!() /* array[2] */);
-            }
-            _ => panic!("{}", MESSAGE_MISFORMED),
-        }
-    }
-
-    quote! {
-        impl #name {
-            #(#code_vec)*
-        }
-    }
-    .into()
+    getter::derive(item)
 }
+
+// #[proc_macro_derive(Getter, attributes(get))]
+// pub fn derive_getter(item: TokenStream) -> TokenStream {
+//     // Let us find the inner part of the structure
+
+//     let item: TokenStream2 = item.into();
+//     let mut iter = item.into_iter();
+//     let name = find_name(&mut iter).expect("no name found");
+
+//     let Some(TokenTree2::Group(group)) =
+//         iter.find(|el| matches!(el, TokenTree2::Group(gp) if gp.delimiter() == Delimiter::Bracket))
+//     else {
+//         panic!("no groupe found")
+//     };
+
+//     let stream = group.stream();
+
+//     let vector = stream.into_iter().collect::<Vec<_>>();
+
+//     let vector = vector
+//         .split(|el| matches!(el, TokenTree2::Punct(p) if p.as_char() == ','))
+//         .collect::<Vec<_>>();
+
+//     let code_vec = Vec::<TokenStream2>::new();
+
+//     const MESSAGE_MISFORMED: &str = "misformed structure, no first element";
+
+//     for array in vector {
+//         let Some(element) = array.first() else {
+//             panic!("{}", MESSAGE_MISFORMED)
+//         };
+
+//         let function_add_code = |_config: (), _ident: &Ident, _ty: &Ident| todo!();
+
+//         match element {
+//             TokenTree2::Punct(p) if p.as_char() == '#' => {
+//                 function_add_code((), todo!() /* array[2] */, todo!() /* array[4] */);
+//             }
+//             TokenTree2::Ident(ident) => {
+//                 function_add_code((), ident, todo!() /* array[2] */);
+//             }
+//             _ => panic!("{}", MESSAGE_MISFORMED),
+//         }
+//     }
+
+//     quote! {
+//         impl #name {
+//             #(#code_vec)*
+//         }
+//     }
+//     .into()
+// }

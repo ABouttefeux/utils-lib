@@ -17,7 +17,7 @@ updates:
   open-pull-requests-limit: 10
   target-branch: develop
 
-# procedural macro
+# procedural macro utils
 - package-ecosystem: cargo
   directory: "/macro-utils/"
   schedule:

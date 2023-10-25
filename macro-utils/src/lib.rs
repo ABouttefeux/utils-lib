@@ -56,7 +56,7 @@
 #![warn(clippy::missing_assert_message)]
 #![warn(clippy::missing_const_for_fn)]
 #![warn(clippy::missing_enforced_import_renames)]
-#![warn(clippy::missing_inline_in_public_items)]
+//#![warn(clippy::missing_inline_in_public_items)]
 #![warn(clippy::mixed_read_write_in_expression)]
 // #![warn(clippy::module_name_repetitions)] // allow
 // #![warn(clippy::multiple_unsafe_ops_per_block)]
@@ -127,76 +127,9 @@
 //--
 //#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize)]
 
+#[macro_use]
+mod macro_def;
+pub mod field;
+
 #[cfg(test)]
 mod test;
-
-use std::marker::PhantomData;
-
-//use proc_macro::TokenStream;
-use proc_macro2::{
-    token_stream::IntoIter, Delimiter, Group, Ident, Span, TokenStream as TokenStream2,
-    TokenTree as TokenTree2,
-};
-use quote::quote;
-use syn::token::In;
-
-//#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
-
-#[derive(Debug, Clone)]
-#[non_exhaustive]
-pub enum Visibility {
-    Pub(Option<Group>),
-    Crate,
-}
-
-// // TODO
-// #[derive(Debug, Clone)]
-// pub enum ConstGeneric {
-//     Value(ConstGenericValue),
-//     Generic(Ident, BaseType),
-// }
-
-// #[derive(Debug, Clone)]
-// #[non_exhaustive]
-// pub enum ConstGenericValue {
-//     Bool(bool),
-//     Char(char),
-//     SignedNumber(i128),
-//     UnsignedNumber(u128),
-//     //Adt()
-// }
-
-#[derive(Debug, Clone)]
-pub struct BaseType {
-    ident: Ident,
-}
-
-#[derive(Debug, Clone)]
-pub struct Ty {
-    ident: Ident,
-    generic: Option<TokenStream2>,
-    // life_time: Vec<Ident>,
-    // generic_ty: Vec<Ty>,
-    // const_generic: Vec<ConstGeneric>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Generic {
-    ty: Ty,
-    bounds: Option<TokenStream2>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Property {
-    name: Ident,
-    ty: Ty,
-    attribute: Ident,
-    attribute_option: Option<Group>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ParsedStructInfo {
-    visibility: Option<Visibility>,
-    generics: Vec<Generic>,
-    where_claus: Vec<TokenStream2>,
-}

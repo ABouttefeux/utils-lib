@@ -1,0 +1,8 @@
+error[E0624]: method `f` is private
+  --> ui_test/fail/get_visibility.rs:26:18
+   |
+13 |         #[derive(Getter)]
+   |                  ------ private method defined here
+...
+26 |     assert_eq!(s.f(), &0);
+   |                  ^ private method

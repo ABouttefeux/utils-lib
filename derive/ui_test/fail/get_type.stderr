@@ -1,0 +1,7 @@
+error: error parsing option: got error right hand value in assignment is misformed or invalid while parsing option self type
+  --> ui_test/fail/get_type.rs:10:10
+   |
+10 | #[derive(Getter)]
+   |          ^^^^^^
+   |
+   = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)

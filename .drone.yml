@@ -1,19 +1,19 @@
 kind: pipeline
 type: docker
-name: test
+name: rust test
 
 steps:
 - name: test
   image: rust
   commands:
-  - cargo clippy --all
-  - cargo test --all
+  - cargo test --all --verbose --no-fail-fast
+  - cargo test --all --verbose --no-fail-fast --examples
+  - cargo clippy --all --verbose --tests -- -D warnings
 
 ---
 kind: pipeline
 type: docker
 name: "doc"
-
 
 steps:
 - name: "doc"
@@ -27,7 +27,6 @@ kind: pipeline
 type: docker
 name: "fmt check"
 
-
 steps:
 - name: "fmt check"
   image: rust
@@ -35,8 +34,3 @@ steps:
   - rustup install nightly
   - rustup +nightly component add rustfmt
   - cargo +nightly fmt --all --check
-
----
-kind: pipeline
-type: docker
-name: "coverage"

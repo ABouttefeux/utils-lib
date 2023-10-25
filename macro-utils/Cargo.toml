@@ -6,11 +6,15 @@ edition = "2021"
 description = "Set of utils for procedural macro"
 repository = "https://git.noxie.ch/ABouttefeux/utils-lib"
 license = "MIT OR Apache-2.0"
+readme = "README.md"
+publish = false
+
 
 [dependencies]
 quote = "1.0"
 syn = "2.0"
 proc-macro2 = "1.0"
 
+
 [dev-dependencies]
-version-sync = "0.9.4"
+version-sync = "0.9.5"

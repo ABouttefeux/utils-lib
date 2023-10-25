@@ -1,0 +1,7 @@
+error: trait_sealed!() does not take any arguments
+ --> ui_test/fail/trait_sealed.rs:4:1
+  |
+4 | trait_sealed!(arg);
+  | ^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `trait_sealed` (in Nightly builds, run with -Z macro-backtrace for more info)

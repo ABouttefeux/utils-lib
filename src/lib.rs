@@ -125,7 +125,24 @@
 #![warn(clippy::missing_docs_in_private_items)] // doc
 
 //--
-//#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize)]
+// #[cfg(feature = "serde")]
+// use serde::{Deserialize, Serialize};
+//
+//#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default)]
+//#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+
+#[macro_use]
+mod macro_def;
+
+pub mod coordinate;
+pub mod error;
+pub mod number;
 
 #[cfg(test)]
 mod test;
+
+#[doc(inline)]
+pub use utils_lib_derive::{trait_sealed, Getter, Sealed};
+
+pub use self::coordinate::{Axis2D, Coordinate};
+pub use self::number::{abs_diff, PositiveFloat, ValidationGuard, ZeroOneBoundedFloat};

@@ -1,0 +1,7 @@
+error: error parsing option: visibility is set multiple times
+ --> ui_test/fail/get_repetition.rs:4:10
+  |
+4 | #[derive(Getter)]
+  |          ^^^^^^
+  |
+  = note: this error originates in the derive macro `Getter` (in Nightly builds, run with -Z macro-backtrace for more info)
