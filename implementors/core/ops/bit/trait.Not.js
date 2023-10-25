@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"utils_lib":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/bit/trait.Not.html\" title=\"trait core::ops::bit::Not\">Not</a> for <a class=\"enum\" href=\"utils_lib/coordinate/enum.Axis2D.html\" title=\"enum utils_lib::coordinate::Axis2D\">Axis2D</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

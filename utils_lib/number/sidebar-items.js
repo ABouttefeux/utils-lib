@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["abs_diff","gcd","lcm"],"mod":["positive_float","sign","zero_one_bounded_float"],"struct":["ValidationGuard"],"trait":["Validation"]};

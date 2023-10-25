@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Procedural macro: utils-lib-derive"><title>utils_lib_derive - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="utils_lib_derive" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (df871fbf0 2023-10-24)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-5f34af1a0ee6bacd.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../utils_lib_derive/index.html">utils_lib_derive</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block">
+            <li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#macros">Macros</a></li><li><a href="#derives">Derive Macros</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">utils_lib_derive</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/utils_lib_derive/lib.rs.html#1-565">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="procedural-macro-utils-lib-derive"><a href="#procedural-macro-utils-lib-derive">Procedural macro: utils-lib-derive</a></h2>
+<p><a href="https://github.com/ABouttefeux/utils-lib/actions/workflows/rust.yml"><img src="https://github.com/ABouttefeux/utils-lib/actions/workflows/rust.yml/badge.svg?branch=develop" alt="Rust" /></a>
+<img src="https://img.shields.io/badge/language-Rust-orange" alt="" />
+<img src="https://img.shields.io/badge/license-MIT_OR_Apache--2.0-blue.svg" alt="License" />
+<a href="https://abouttefeux.github.io/utils-lib/utils_lib_derive/index.html"><img src="https://img.shields.io/badge/doc-Read_Me-blueviolet" alt="" /></a>
+<a href="https://codecov.io/gh/ABouttefeux/utils-lib"><img src="https://codecov.io/gh/ABouttefeux/utils-lib/branch/develop/graph/badge.svg?token=mUFucbIHuh" alt="codecov" /></a></p>
+<p>Derive macro for <a href="https://abouttefeux.github.io/utils-lib/utils_lib/derive.Getter.html"><code>Getter</code></a> and <a href="https://abouttefeux.github.io/utils-lib/utils_lib/derive.Sealed.html"><code>Sealed</code></a> trait.</p>
+<p>This crate won’t be publish on crates.io. And I might introduce breaking change at anytime.
+For now I am not completely happy with the syntax of the <a href="https://abouttefeux.github.io/utils-lib/utils_lib/derive.Getter.html"><code>Getter</code></a> derive macro (but may require too much time for me). 
+I have also plan to add more derive macro in the future.</p>
+<h2 id="example"><a href="#example">Example</a></h2><h3 id="getter"><a href="#getter">Getter</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Getter)]
+</span><span class="kw">struct </span>S {
+    <span class="attr">#[get(Pub, Const)]
+    </span>f: u32,
+    <span class="attr">#[get_mut(Pub)]
+    </span>f2: i8
+}
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span><span class="kw-2">mut </span>s = S { f: <span class="number">1_u32</span>, f2: -<span class="number">1_i8 </span>};
+    <span class="macro">assert_eq!</span>(s.f(), <span class="kw-2">&amp;</span><span class="number">1_u32</span>);
+    <span class="macro">assert_eq!</span>(s.f2_mut(), <span class="kw-2">&amp;</span>-<span class="number">1_i8</span>);
+}</code></pre></div>
+<h3 id="sealed"><a href="#sealed">Sealed</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::{trait_sealed, Sealed};
+
+<span class="comment">// this create a module named [`private`] with a trait named [`Sealed`]
+// without method inside that module.
+</span><span class="macro">trait_sealed!</span>();
+
+<span class="attr">#[derive(Sealed)]
+</span><span class="kw">struct </span>S;
+
+<span class="doccomment">/// this trait is sealed and cannot me implemented outside of this crate
+/// because [`Sealed`] is a private trait that can&#39;t be implemented outside
+/// of this crate.
+</span><span class="kw">pub trait </span>Trait: private::Sealed {}
+
+<span class="kw">impl </span>Trait <span class="kw">for </span>S {}
+
+<span class="kw">fn </span>main() {}</code></pre></div>
+<p><a href="https://github.com/ABouttefeux/utils-lib/tree/main/derive/examples">See more example</a></p>
+</div></details><h2 id="macros" class="small-section-header"><a href="#macros">Macros</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.trait_sealed.html" title="macro utils_lib_derive::trait_sealed">trait_sealed</a></div><div class="desc docblock-short">Creates a trait <code>Sealed</code> into a private module <code>private</code>.</div></li></ul><h2 id="derives" class="small-section-header"><a href="#derives">Derive Macros</a></h2><ul class="item-table"><li><div class="item-name"><a class="derive" href="derive.Getter.html" title="derive utils_lib_derive::Getter">Getter</a></div><div class="desc docblock-short">Derive getter macro</div></li><li><div class="item-name"><a class="derive" href="derive.Sealed.html" title="derive utils_lib_derive::Sealed">Sealed</a></div><div class="desc docblock-short">Derive the <code>Sealed</code> trait</div></li></ul></section></div></main></body></html>

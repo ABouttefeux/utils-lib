@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"macro_utils":[["impl <a class=\"trait\" href=\"https://docs.rs/quote/1.0.33/quote/to_tokens/trait.ToTokens.html\" title=\"trait quote::to_tokens::ToTokens\">ToTokens</a> for <a class=\"enum\" href=\"macro_utils/field/enum.FieldName.html\" title=\"enum macro_utils::field::FieldName\">FieldName</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

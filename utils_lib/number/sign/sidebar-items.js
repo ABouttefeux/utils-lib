@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Sign"],"fn":["levi_civita"]};

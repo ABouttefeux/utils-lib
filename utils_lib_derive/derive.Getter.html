@@ -1,0 +1,303 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Derive getter macro"><title>Getter in utils_lib_derive - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="utils_lib_derive" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (df871fbf0 2023-10-24)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-5f34af1a0ee6bacd.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../utils_lib_derive/index.html">utils_lib_derive</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Derive Macro <a href="index.html">utils_lib_derive</a>::<wbr><a class="derive" href="#">Getter</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/utils_lib_derive/lib.rs.html#563-565">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>#[derive(Getter)]
+{
+    // Attributes available to this derive:
+    #[get]
+    #[get_mut]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Derive getter macro</p>
+<p>valid field attribute:</p>
+<ul>
+<li><code>#[get]</code> for immutable getter</li>
+<li><code>#[get_mut]</code> for mutable getter</li>
+</ul>
+<p>Valid option for mutable getter :</p>
+<ul>
+<li>Name</li>
+<li>Visibility</li>
+</ul>
+<p>Valid option for immutable getter :</p>
+<ul>
+<li>Name</li>
+<li>Visibility</li>
+<li>Constant type</li>
+<li>Getter type</li>
+<li>Self Type</li>
+</ul>
+<h3 id="name"><a href="#name">Name</a></h3>
+<p>determine the name og the getter. By default it is the name of the field for
+immutable getter and <code>{name}_mut</code> for mutable getter. It can be rename using
+the option <code>name = &quot;{name}&quot;</code> or <code>name({name})</code> with <code>{name}</code> the name of the getter.</p>
+<h4 id="example"><a href="#example">Example</a></h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Getter)]
+</span><span class="kw">struct </span>S {
+    <span class="attr">#[get(name = <span class="string">&quot;field&quot;</span>)]
+    #[get_mut(name(mut_getter))]
+    </span>f: usize,
+    <span class="attr">#[get_mut] </span><span class="comment">// by default the name of the getter is `c_mut`
+    </span><span class="attr">#[get] </span><span class="comment">// by default the name of the getter is `c`
+    </span>c: char,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>s = S { f: <span class="number">0</span>, c: <span class="string">&#39;A&#39; </span>};
+<span class="macro">assert_eq!</span>(s.field(), <span class="kw-2">&amp;</span><span class="number">0</span>);
+<span class="macro">assert_eq!</span>(s.mut_getter(), <span class="kw-2">&amp;mut </span><span class="number">0</span>);
+
+<span class="macro">assert_eq!</span>(s.c(), <span class="kw-2">&amp;</span><span class="string">&#39;A&#39;</span>);
+<span class="macro">assert_eq!</span>(s.c_mut(), <span class="kw-2">&amp;mut </span><span class="string">&#39;A&#39;</span>);</code></pre></div>
+<p>In the case of a tuple struct the name is a requirement.</p>
+
+<div class="example-wrap compile_fail"><a href="#" class="tooltip" title="This example deliberately fails to compile">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Getter)]
+</span><span class="kw">struct </span>Tuple(<span class="attr">#[get] </span>f32)</code></pre></div>
+<p>should be changed to</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Getter)]
+</span><span class="kw">struct </span>Tuple(<span class="attr">#[get(name = <span class="string">&quot;field&quot;</span>)] </span>f32);
+
+<span class="kw">let </span>t = Tuple(<span class="number">0_f32</span>);
+<span class="macro">assert_eq!</span>(t.field(), <span class="kw-2">&amp;</span><span class="number">0_f32</span>);</code></pre></div>
+<h3 id="visibility"><a href="#visibility">Visibility</a></h3>
+<p>Determine the visibility of the getter, i.e. if it is private, public or restrained.
+As for function in rust by default getter are private. It is possible to change
+the visibility of the getter using the following syntax
+accepted option :</p>
+<ul>
+<li>value:
+<ul>
+<li><code>Pub</code></li>
+<li><code>Crate</code></li>
+<li><code>pub</code> (wip)</li>
+<li><code>public</code></li>
+<li><code>crate</code> (wip)</li>
+<li><code>pub({path})</code> (wip)</li>
+<li><code>private</code></li>
+</ul>
+</li>
+<li><code>Visibility = &quot;{value}&quot;</code> with <code>{value}</code> a previously define value</li>
+<li><code>Visibility({value})</code></li>
+</ul>
+<h4 id="example-1"><a href="#example-1">Example</a></h4>
+<p>TODO</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">mod </span>private {
+    <span class="kw">use </span>utils_lib_derive::Getter;
+
+    <span class="attr">#[derive(Getter)]
+    </span><span class="kw">pub struct </span>S {
+        <span class="attr">#[get(public)]
+        </span><span class="kw">pub </span>f: usize,
+    }
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>s = private::S { f: <span class="number">0 </span>};
+<span class="macro">assert_eq!</span>(s.f(), <span class="kw-2">&amp;</span><span class="number">0</span>);</code></pre></div>
+<h3 id="constant-type"><a href="#constant-type">Constant type</a></h3>
+<p>Determine if the function is constant or not. By default it is not but I would strongly
+advice to make it constant.
+accepted option :</p>
+<ul>
+<li>value:
+<ul>
+<li><code>Const</code></li>
+<li><code>const</code> (WIP)</li>
+</ul>
+</li>
+<li><code>{value} = {bool}</code></li>
+<li><code>{value}({bool})</code> (wip)
+with <code>{bool}</code> a boolean.</li>
+</ul>
+<h4 id="example-2"><a href="#example-2">Example</a></h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Getter, Clone)]
+</span><span class="kw">struct </span>S {
+    <span class="attr">#[get(Const)]
+    </span>f: usize,
+}
+
+<span class="kw">const fn </span>cst_fn(s: <span class="kw-2">&amp;</span>S) -&gt; <span class="kw-2">&amp;</span>usize {
+    <span class="comment">// we can call f() in a const fn as it is const
+    </span>s.f()
+}</code></pre></div>
+<h3 id="getter-type"><a href="#getter-type">Getter type</a></h3>
+<p>Determine how the value is returned. It can be returned by reference, by copy or by clone.
+An explicit definition can be found after the example.
+By default the value is return by reference.
+accepted option :</p>
+<ul>
+<li>value
+<ul>
+<li><code>by_ref</code></li>
+<li><code>by ref</code></li>
+<li><code>by_value</code> : copy type</li>
+<li><code>by_copy</code></li>
+<li><code>copy</code></li>
+<li><code>Copy</code></li>
+<li><code>by_clone</code></li>
+<li><code>clone</code></li>
+<li><code>Clone</code></li>
+</ul>
+</li>
+<li><code>{left} = &quot;{value}&quot;</code></li>
+<li><code>{left} ({value})</code>
+with {left}</li>
+<li><code>getter_ty</code></li>
+<li><code>Getter_ty</code></li>
+<li><code>getter_type</code></li>
+<li><code>Getter_type</code></li>
+</ul>
+<h4 id="example-3"><a href="#example-3">Example</a></h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Getter, Clone)]
+</span><span class="kw">struct </span>S {
+    <span class="comment">// this just the default getter and return `&amp;Vec&lt;usize&gt;`
+    </span><span class="attr">#[get(getter_ty = <span class="string">&quot;by_ref&quot;</span>)]
+    </span>f1: Vec&lt;usize&gt;,
+    <span class="attr">#[get(by_copy)] </span><span class="comment">// return a copy of the field
+    </span>f2: i32,
+    <span class="attr">#[get(getter_ty = <span class="string">&quot;by_value&quot;</span>, self_ty = <span class="string">&quot;value&quot;</span>)] </span><span class="comment">// move self and return the string
+    </span>f3: String,
+    <span class="attr">#[get(getter_ty(Clone))] </span><span class="comment">// return a copy of the field
+    </span>f4: String,
+}
+
+<span class="kw">let </span>s = S {
+    f1: <span class="macro">vec!</span>[<span class="number">0_usize</span>],
+    f2: <span class="number">0_i32</span>,
+    f3: <span class="string">&quot;s3&quot;</span>.to_owned(),
+    f4: <span class="string">&quot;s4&quot;</span>.to_owned(),
+};
+
+<span class="macro">assert_eq!</span>(s.f1(), <span class="kw-2">&amp;</span><span class="macro">vec!</span>[<span class="number">0_usize</span>]);
+
+<span class="kw">let </span><span class="kw-2">mut </span>value = s.f2();
+<span class="macro">assert_eq!</span>(value, <span class="number">0_i32</span>);
+value = <span class="number">1_i32</span>;
+<span class="macro">assert_eq!</span>(s.f2(), <span class="number">0_i32</span>);
+
+<span class="macro">assert_eq!</span>(s.clone().f3(), <span class="string">&quot;s3&quot;</span>.to_owned()); <span class="comment">// we need to clone as s is moved.
+
+</span><span class="kw">let </span><span class="kw-2">mut </span>string = s.f4();
+<span class="macro">assert_eq!</span>(string, <span class="string">&quot;s4&quot;</span>.to_owned());
+string = String::new();
+<span class="macro">assert_eq!</span>(s.f4(), <span class="string">&quot;s4&quot;</span>.to_owned());</code></pre></div>
+<p>let us show some properties. First lest go bac to the <code>clone</code> when using the <code>f3</code>
+getter. As before</p>
+
+<div class="example-wrap compile_fail"><a href="#" class="tooltip" title="This example deliberately fails to compile">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Getter, Clone)]
+</span><span class="kw">struct </span>S {
+    <span class="attr">#[get(getter_ty = <span class="string">&quot;by_value&quot;</span>, self_ty = <span class="string">&quot;value&quot;</span>)]
+    </span>f3: String,
+}
+
+<span class="kw">let </span>s = S {
+    f3: <span class="string">&quot;s3&quot;</span>.to_owned(),
+};
+
+<span class="macro">assert_eq!</span>(s.f3(), <span class="string">&quot;s3&quot;</span>.to_owned()); <span class="comment">// we &quot;forgot&quot; to clone s which lead to an error
+</span><span class="macro">assert_eq!</span>(s.f4(), <span class="string">&quot;s4&quot;</span>.to_owned());</code></pre></div>
+<p>Another common common mistake is to use <code>by_value</code> (or <code>copy</code>) a non copy type
+without using a <code>getter_ty = &quot;by_value&quot;</code></p>
+
+<div class="example-wrap compile_fail"><a href="#" class="tooltip" title="This example deliberately fails to compile">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Getter)]
+</span><span class="kw">struct </span>S {
+    <span class="attr">#[get(getter_ty = <span class="string">&quot;by_value&quot;</span>)]
+    </span>f: Vec&lt;()&gt;,
+}</code></pre></div>
+<h4 id="definition"><a href="#definition">Definition</a></h4>
+<p>A getter type by copy means that we write</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>field(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
+    <span class="self">self</span>.field
+}</code></pre></div>
+<p>It works only for type that implements <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html" title="trait core::marker::Copy"><code>Copy</code></a>.</p>
+<p>A getter type by clone means that we write</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>field(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+    <span class="self">self</span>.field.clone()
+}</code></pre></div>
+<p>It works only for type that implements <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone"><code>Clone</code></a>.</p>
+<p>A getter type by reference means that we write</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>field(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>String {
+    <span class="kw-2">&amp;</span><span class="self">self</span>.field
+}</code></pre></div>
+<p>This is the default behavior and does not require any traits.</p>
+<h3 id="self-type"><a href="#self-type">Self Type</a></h3>
+<p>Determine how self is handled. It is either used by reference or by value (or moved).
+An explicit definition can be found after the example.
+By default the self is referenced.
+Note that using <code>self_ty = &quot;value&quot;</code> require that <code>getter_ty</code> to be by
+<code>value</code> (or by <code>clone</code>).
+accepted option :</p>
+<ul>
+<li><code>{left} = &quot;{right}&quot;</code></li>
+<li><code>{left}({right})</code>
+with <code>{left}</code>:</li>
+<li><code>self_ty</code></li>
+<li><code>Self_ty</code></li>
+<li><code>self_type</code></li>
+<li><code>Self_type</code></li>
+<li><code>Self</code>
+and <code>{right}</code></li>
+<li><code>value</code></li>
+<li><code>copy</code></li>
+<li><code>move</code></li>
+<li><code>ref</code></li>
+</ul>
+<h4 id="example-4"><a href="#example-4">Example</a></h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Clone, Copy, Getter)]
+</span><span class="kw">struct </span>S {
+    <span class="attr">#[get(self_ty = <span class="string">&quot;value&quot;</span>, getter_ty = <span class="string">&quot;copy&quot;</span>)]
+    </span>f: u32,
+}
+
+<span class="kw">let </span>s = S { f: <span class="number">0_u32 </span>};
+<span class="macro">assert_eq!</span>(s.f(), <span class="number">0_u32</span>);
+<span class="macro">assert_eq!</span>(s.f(), <span class="number">0_u32</span>);
+
+<span class="attr">#[derive(Clone, Getter)]
+</span><span class="kw">struct </span>S2 {
+    <span class="attr">#[get(Self_type(value), Getter_type(by_value))]
+    </span>f: String,
+}
+
+<span class="kw">let </span>s = S2 {
+    f: <span class="string">&quot;string&quot;</span>.to_owned(),
+};
+<span class="macro">assert_eq!</span>(s.f(), <span class="string">&quot;string&quot;</span>.to_owned());</code></pre></div>
+<p>The next example demonstrate that using <code>self_ty</code> as <code>value</code> but leaving <code>getter_ty</code>
+as ref gives an error.</p>
+
+<div class="example-wrap compile_fail"><a href="#" class="tooltip" title="This example deliberately fails to compile">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>utils_lib_derive::Getter;
+
+[derive(Clone, Copy, Getter)]
+<span class="kw">struct </span>S {
+    <span class="attr">#[get(self_ty = <span class="string">&quot;value&quot;</span>, getter_ty = <span class="string">&quot;ref&quot;</span>)]
+    </span>f: u32,
+}</code></pre></div>
+<h4 id="definition-1"><a href="#definition-1">Definition</a></h4>
+<p>A self type is referenced if we write</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>field(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>String {
+   <span class="kw-2">&amp;</span><span class="self">self</span>.field
+}</code></pre></div>
+<p>A self type is moved if we write</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>field(<span class="self">self</span>) -&gt; u32 {
+    <span class="self">self</span>.field
+}</code></pre></div>
+<p>It is only recommended for Type that implement <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html" title="trait core::marker::Copy"><code>Copy</code></a> and is smaller or equal in size
+of an <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html" title="primitive usize"><code>usize</code></a> of your targeted platforms. Note also that the <code>getter_type</code> must be <code>by_value</code>
+(or <code>clone</code>) and will give an error if left by default or set <code>by_ref</code>.</p>
+</div></details></section></div></main></body></html>

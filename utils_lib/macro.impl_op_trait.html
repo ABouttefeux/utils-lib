@@ -1,0 +1,134 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="impl `std::ops` trait for a given type wrapper with a given method that gives or is derefed into the wrapped value. The traits have to be imported by you at the place of invocation, (see example)."><title>impl_op_trait in utils_lib - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="utils_lib" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (df871fbf0 2023-10-24)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-5f34af1a0ee6bacd.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../utils_lib/index.html">utils_lib</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="index.html">utils_lib</a>::<wbr><a class="macro" href="#">impl_op_trait</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/utils_lib/macro_def.rs.html#135-205">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><span class="macro">macro_rules! </span>impl_op_trait {
+    (<span class="macro-nonterminal">$s</span>:ty, <span class="macro-nonterminal">$method</span>:ident, Add) =&gt; { ... };
+    (<span class="macro-nonterminal">$s</span>:ty, <span class="macro-nonterminal">$method</span>:ident, Mul) =&gt; { ... };
+    (<span class="macro-nonterminal">$s</span>:ty, <span class="macro-nonterminal">$method</span>:ident, Div) =&gt; { ... };
+    (<span class="macro-nonterminal">$s</span>:ty, <span class="macro-nonterminal">$method</span>:ident, Sub) =&gt; { ... };
+    (<span class="macro-nonterminal">$s</span>:ty, <span class="macro-nonterminal">$method</span>:ident, Rem) =&gt; { ... };
+    (<span class="macro-nonterminal">$s</span>:ty, <span class="macro-nonterminal">$method</span>:ident, <span class="macro-nonterminal">$t1</span>:ident, <span class="macro-nonterminal">$f1</span>:ident, <span class="macro-nonterminal">$t2</span>:ident, <span class="macro-nonterminal">$f2</span>:ident) =&gt; { ... };
+}</pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>impl <a href="https://doc.rust-lang.org/nightly/core/ops/index.html" title="mod core::ops"><code>std::ops</code></a> trait for a given type wrapper with a given method that
+gives or is derefed into the wrapped value. The traits have to be imported by you at the place of invocation,
+(see example).</p>
+<h2 id="example"><a href="#example">Example</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// this has to be imported for the macro to work.
+</span><span class="kw">use </span>std::ops::{Add, AddAssign, Sub, SubAssign};
+
+<span class="kw">use </span>utils_lib::impl_op_trait;
+<span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="attr">#[derive(Debug, Clone, Copy, PartialEq, Getter)]
+</span><span class="kw">struct </span>Wrapper {
+    <span class="attr">#[get(Const)]
+    #[get_mut(Pub)] </span><span class="comment">// this create a method `float_mut` that gives `&amp;mut f64`
+    </span>float: f64,
+}
+
+<span class="kw">impl </span>std::ops::Deref <span class="kw">for </span>Wrapper {
+    <span class="kw">type </span>Target = f64;
+
+    <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
+        <span class="self">self</span>.float()
+    }
+}
+
+<span class="macro">impl_op_trait!</span>(Wrapper, float_mut, Add);
+<span class="macro">impl_op_trait!</span>(Wrapper, float_mut, Sub);
+
+<span class="kw">let </span>w1 = Wrapper { float: <span class="number">1_f64 </span>};
+<span class="kw">let </span>w2 = Wrapper { float: <span class="number">2_f64 </span>};
+
+<span class="kw">let </span>w3 = Wrapper { float: <span class="number">3_f64 </span>};
+
+<span class="macro">assert_eq!</span>(w1 + w2, w3);
+<span class="macro">assert_eq!</span>(w1 + <span class="kw-2">&amp;</span>w2, w3);
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>w1 + w2, w3);
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>w1 + <span class="kw-2">&amp;</span>w2, w3);
+<span class="macro">assert_eq!</span>(w2 - w1, w1);
+
+<span class="kw">let </span><span class="kw-2">mut </span>w2 = w2;
+w2 += w1;
+
+<span class="macro">assert_eq!</span>(w2, w3);</code></pre></div>
+<p>another possibility is that instead of using a direct mut getter we can use a
+struct similar to <a href="number/struct.ValidationGuard.html" title="struct utils_lib::number::ValidationGuard"><code>crate::number::ValidationGuard</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// this has to be imported for the macro to work.
+</span><span class="kw">use </span>std::ops::{Add, AddAssign, Sub, SubAssign};
+<span class="kw">use </span>std::ops::{Deref, DerefMut};
+
+<span class="kw">use </span>utils_lib::impl_op_trait;
+<span class="kw">use </span>utils_lib_derive::Getter;
+
+<span class="comment">// We need Copy for the macro to work
+</span><span class="attr">#[derive(Debug, Clone, Copy, PartialEq, Getter)]
+</span><span class="kw">struct </span>Wrapper {
+    <span class="attr">#[get(Const)]
+    </span>float: f64,
+}
+
+<span class="comment">// we need this trait for the macro to work
+</span><span class="kw">impl </span>Deref <span class="kw">for </span>Wrapper {
+    <span class="kw">type </span>Target = f64;
+
+    <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
+        <span class="self">self</span>.float()
+    }
+}
+
+<span class="attr">#[derive(Debug, Getter)]
+</span><span class="kw">pub struct </span>ValidationGuard&lt;<span class="lifetime">&#39;a</span>&gt; {
+    reference: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>Wrapper,
+    <span class="attr">#[get(Const)]
+    #[get_mut]
+    </span>float: f64,
+}
+
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Deref <span class="kw">for </span>ValidationGuard&lt;<span class="lifetime">&#39;a</span>&gt; {
+    <span class="kw">type </span>Target = f64;
+
+    <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
+        <span class="self">self</span>.float()
+    }
+}
+
+<span class="comment">// we need this trait for the macro to work
+</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; DerefMut <span class="kw">for </span>ValidationGuard&lt;<span class="lifetime">&#39;a</span>&gt; {
+    <span class="kw">fn </span>deref_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="self">Self</span>::Target {
+        <span class="self">self</span>.float_mut()
+    }
+}
+
+<span class="comment">// when we drop the guard we change the value in the wrapper with the tracked value
+// we could add some validation here
+</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Drop <span class="kw">for </span>ValidationGuard&lt;<span class="lifetime">&#39;a</span>&gt; {
+    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="self">self</span>.reference.float = <span class="self">self</span>.float;
+    }
+}
+
+<span class="kw">impl </span>Wrapper {
+    <span class="kw">pub fn </span>float_mut(<span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span><span class="kw-2">mut </span><span class="self">self</span>) -&gt; ValidationGuard&lt;<span class="lifetime">&#39;_</span>&gt; {
+        ValidationGuard {
+            float: <span class="self">self</span>.float,
+            reference: <span class="self">self</span>,
+        }
+    }
+}
+
+<span class="macro">impl_op_trait!</span>(Wrapper, float_mut, Add);
+<span class="macro">impl_op_trait!</span>(Wrapper, float_mut, Sub);
+
+<span class="kw">let </span>w1 = Wrapper { float: <span class="number">1_f64 </span>};
+<span class="kw">let </span>w2 = Wrapper { float: <span class="number">2_f64 </span>};
+
+<span class="kw">let </span>w3 = Wrapper { float: <span class="number">3_f64 </span>};
+
+<span class="macro">assert_eq!</span>(w1 + w2, w3);
+<span class="macro">assert_eq!</span>(w1 + <span class="kw-2">&amp;</span>w2, w3);
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>w1 + w2, w3);
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>w1 + <span class="kw-2">&amp;</span>w2, w3);
+<span class="macro">assert_eq!</span>(w2 - w1, w1);
+
+<span class="kw">let </span><span class="kw-2">mut </span>w2 = w2;
+w2 += <span class="kw-2">&amp;</span>w1;
+<span class="macro">assert_eq!</span>(w2, w3);</code></pre></div>
+</div></details></section></div></main></body></html>

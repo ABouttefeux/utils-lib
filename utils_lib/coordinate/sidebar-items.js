@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Axis2D"],"struct":["Coordinate","CoordinateIterator"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["Getter","Sealed"],"macro":["impl_op_trait","trait_sealed"],"mod":["coordinate","error","number"]};
