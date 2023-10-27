@@ -16,7 +16,7 @@ I also might be slow to merge the changes on the main branch.
 Also I won't publish this crate on crates.io so you will have to specify the git url in the cargo.toml file.
 ```toml
 [dependencies]
-utils-lib = { version = "0.1.0", git = "https://git.noxie.ch/ABouttefeux/utils-lib" }
+utils-lib = { version = "0.1.1", git = "https://git.noxie.ch/ABouttefeux/utils-lib" }
 ```
 
 If you want the bleeding edge feature you might want to target the develop branch using

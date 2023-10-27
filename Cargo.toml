@@ -1,6 +1,6 @@
 [package]
 name = "utils-lib"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Aliénore Bouttefeux <alienore.bouttefeux@gmail.com>"]
 readme = "README.md"
