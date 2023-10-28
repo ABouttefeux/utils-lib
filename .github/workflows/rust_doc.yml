@@ -24,7 +24,7 @@ jobs:
         default: true
     
     - name: Doc
-      run: cargo doc --all --no-deps
+      run: cargo doc --all --no-deps --all-features
     
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@v3

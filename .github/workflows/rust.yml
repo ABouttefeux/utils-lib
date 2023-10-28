@@ -31,6 +31,25 @@ jobs:
     - name: Run examples tests
       run: cargo test --profile ${{ matrix.profile }} --all --verbose --no-fail-fast --examples
     
-    - name: Linter
-      run: cargo clippy --profile ${{ matrix.profile }} --all --verbose --tests -- -D warnings
+    # - name: Linter
+    #   run: cargo clippy --profile ${{ matrix.profile }} --all --verbose --tests -- -D warnings
+
+  linter:
+    runs-on: ubuntu-latest
     
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install Rust nightly toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        components: clippy
+        default: true
+    
+    - name: Linter
+      run: cargo +nightly clippy --all --verbose --tests -- --no-deps --deny warnings
+    
+    - name: Linter release
+      run: cargo +nightly clippy --all --verbose --release --tests -- --no-deps --deny warnings

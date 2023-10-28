@@ -1,24 +1,32 @@
 
 include utility.mk 
 
-lib_name := utils-lib.rlib
+lib_name := libutils_lib.rlib
 
 source_sufix := rs
-source_files := $(foreach sufix, $(source_sufix), $(wildcard *.$(sufix) */*.$(sufix) */*/*.$(sufix) */*/*/*.$(sufix) */*/*/*/*.$(sufix) */*/*/*/*/*.$(sufix)))
+source_files := $(foreach sufix,$(source_sufix),$(wildcard *.$(sufix) */*.$(sufix) */*/*.$(sufix) */*/*/*.$(sufix) */*/*/*/*.$(sufix) */*/*/*/*/*.$(sufix)))
 
+# cargo
 cargo := cargo
 cargo_build := build
 cargo_test := test
 cargo_doc := doc
+# work space
 cargo_all_flag := --all
 cargo_crate_derive := -p utils-lib-derive
 
+# clippy
+cargo_clippy := clippy
+cargo_clippy_flag := -- -D warnings
+
 rust_release_flag := --release
+# doc
 rust_doc_flag_private_item := --document-private-items
 rust_doc_flag_no_dep := --no-deps
-rust_example_flag := --examples
+# target
 rust_tests = --tests
-
+rust_example_flag := --examples
+# feature
 rust_coverage_feature := features="coverage"
 
 rust_stable := +stable
@@ -38,19 +46,23 @@ all: target/release/$(lib_name)
 
 
 .PHONY: build
-build: $(source_files)
-	$(cargo) $(rust_nightly) $(cargo_build)
-	$(cargo) $(rust_stable) $(cargo_build)
+build: target/release/$(lib_name) target/debug/$(lib_name)
 
 
-.PHONY: test
-test: $(source_files)
+.PHONY: test_full
+test_full: $(source_files) clippy doc_check
 	$(cargo) $(rust_nightly) $(cargo_test) $(cargo_all_flag)
 	$(cargo) $(rust_nightly) $(cargo_test) $(cargo_all_flag) $(rust_example_flag)
-	$(cargo) $(rust_nightly) $(cargo_test) $(release) $(cargo_all_flag)
-	$(cargo) $(rust_nightly) $(cargo_test) $(release) $(cargo_all_flag) $(rust_example_flag)
+	$(cargo) $(rust_nightly) $(cargo_test) $(rust_release_flag) $(cargo_all_flag)
+	$(cargo) $(rust_nightly) $(cargo_test) $(rust_release_flag) $(cargo_all_flag) $(rust_example_flag)
 	$(cargo) $(rust_stable) $(cargo_test) $(cargo_all_flag)
 	$(cargo) $(rust_stable) $(cargo_test) $(cargo_all_flag) $(rust_example_flag)
+
+
+.PHONY: clippy
+clippy: $(source_files)
+	$(cargo) $(rust_nightly) $(cargo_clippy) $(cargo_all_flag) $(rust_tests) $(cargo_clippy_flag)
+	$(cargo) $(rust_nightly) $(cargo_clippy) $(cargo_all_flag) $(rust_tests) $(rust_release_flag) $(cargo_clippy_flag)
 
 
 .PHONY: bless_ui

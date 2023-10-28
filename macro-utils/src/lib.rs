@@ -123,6 +123,14 @@
 //---------------
 #![warn(missing_docs)] // doc
 #![warn(clippy::missing_docs_in_private_items)] // doc
+#![deny(rustdoc::broken_intra_doc_links)] // cspell: ignore rustdoc
+#![deny(rustdoc::private_intra_doc_links)]
+#![deny(rustdoc::invalid_codeblock_attributes)]
+#![deny(rustdoc::invalid_html_tags)]
+#![deny(rustdoc::invalid_rust_codeblocks)]
+#![deny(rustdoc::bare_urls)]
+#![deny(rustdoc::unescaped_backticks)]
+#![deny(rustdoc::redundant_explicit_links)]
 
 //--
 //#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize)]
